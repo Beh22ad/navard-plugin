@@ -47,13 +47,14 @@ final class Config
     public static function defaults(): array
     {
         return [
-            'endpoint'      => 'main',
-            'api_key'       => '',
-            'fallback'      => 'keep',
-            'mod_type'      => 'none',
-            'mod_value'     => '',
-            'round_enabled' => 'no',
-            'round_unit'    => '',
+            'endpoint'            => 'main',
+            'api_key'             => '',
+            'fallback'            => 'keep',
+            'mod_type'            => 'none',
+            'mod_value'           => '',
+            'round_enabled'       => 'no',
+            'round_unit'          => '',
+            'replace_cat_archive' => 'no',
         ];
     }
 

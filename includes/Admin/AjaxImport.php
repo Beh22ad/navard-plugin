@@ -24,7 +24,7 @@ final class AjaxImport
 ?>
         <div class="navard-op" dir="rtl">
             <h2>درون‌ریزی محصولات</h2>
-            <p>محصولات از API خوانده شده و به صورت دسته‌ای (هر بار ۵ محصول) به ووکامرس اضافه یا بروزرسانی می‌شوند.</p>
+            <p>محصولات از API خوانده شده و به صورت دسته‌ای به ووکامرس اضافه یا بروزرسانی می‌شوند.</p>
             <p>
                 <button type="button" class="button button-primary" id="navard-import-start">شروع درون‌ریزی</button>
                 <span class="navard-status" id="navard-import-status"></span>

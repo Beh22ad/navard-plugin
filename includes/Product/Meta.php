@@ -23,6 +23,8 @@ final class Meta
     public const MOD_VALUE       = '_navard_mod_value';
     public const ROUND_ENABLED   = '_navard_round_enabled';
     public const ROUND_UNIT      = '_navard_round_unit';
+    public const HAS_TITLE       = '_navard_has_title';
+    public const COLUMNS         = '_navard_columns';
 
     public static function auto_update(int $product_id): string
     {

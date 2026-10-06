@@ -51,7 +51,12 @@ final class Importer
         $product_id = Finder::by_api_id($api_id);
         $is_new     = (0 === $product_id);
 
+        $has_title = isset($raw['عنوان کالا']) && '' !== trim((string) $raw['عنوان کالا']);
+
         $title = Mapper::title($raw, $ctx['category_name'], $ctx['factory'], $ctx['tag']);
+
+        // Column order = the API JSON key order, minus the fields we handle separately.
+        $columns = $this->collect_columns($raw);
 
         $product = $is_new ? new \WC_Product_Simple() : wc_get_product($product_id);
         if (! $product instanceof \WC_Product) {
@@ -90,9 +95,11 @@ final class Importer
         update_post_meta($product_id, Meta::TAG_META, $ctx['tag']);
         update_post_meta($product_id, Meta::LAST_UPDATE, Mapper::last_update($raw, $ctx['group_last']));
         update_post_meta($product_id, Meta::CHECKED_AT, Mapper::checked_at());
+        update_post_meta($product_id, Meta::HAS_TITLE, $has_title ? 'yes' : 'no');
+        update_post_meta($product_id, Meta::COLUMNS, wp_json_encode($columns, JSON_UNESCAPED_UNICODE));
 
         if (! empty($raw['priceHistory']) && is_array($raw['priceHistory'])) {
-            update_post_meta($product_id, Meta::PRICE_HISTORY, wp_json_encode(array_slice($raw['priceHistory'], -50)));
+            update_post_meta($product_id, Meta::PRICE_HISTORY, wp_json_encode(array_slice($raw['priceHistory'], -50), JSON_UNESCAPED_UNICODE));
         }
         if (isset($raw['نوسان قیمت'])) {
             update_post_meta($product_id, Meta::PRICE_CHANGE, sanitize_text_field((string) $raw['نوسان قیمت']));
@@ -115,25 +122,43 @@ final class Importer
         return null;
     }
 
+    /**
+     * Return the ordered list of API field names we want to show as columns.
+     * Excludes fields handled separately.
+     *
+     * @return array<int,string>
+     */
+    private function collect_columns(array $raw): array
+    {
+        $skip = ['price', 'id', 'priceHistory'];
+        $out  = [];
+
+        foreach ($raw as $key => $value) {
+            if (! is_string($key)) {
+                continue;
+            }
+            if (in_array($key, $skip, true)) {
+                continue;
+            }
+            if (is_array($value)) {
+                continue;
+            }
+            $out[] = $key;
+        }
+
+        return $out;
+    }
+
     private function assign_categories(int $product_id, array $ctx): void
     {
         $parent_id = 0;
 
         if ('' !== $ctx['parent_name']) {
-            $parent_id = Taxonomies::ensure_term(
-                'product_cat',
-                $ctx['parent_name'],
-                $ctx['parent_slug']
-            );
+            $parent_id = Taxonomies::ensure_term('product_cat', $ctx['parent_name'], $ctx['parent_slug']);
         }
 
         if ('' !== $ctx['category_name']) {
-            $child_id = Taxonomies::ensure_term(
-                'product_cat',
-                $ctx['category_name'],
-                $ctx['category_slug'],
-                $parent_id
-            );
+            $child_id = Taxonomies::ensure_term('product_cat', $ctx['category_name'], $ctx['category_slug'], $parent_id);
             if ($child_id > 0) {
                 wp_set_object_terms($product_id, [$child_id], 'product_cat', false);
                 return;

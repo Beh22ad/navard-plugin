@@ -12,7 +12,8 @@ use Navard\Admin\Settings;
 use Navard\Cron\Endpoint;
 use Navard\Cron\Scheduler;
 use Navard\Product\Frontend;
-use Navard\Product\Taxonomies;
+use Navard\Shortcode\Archive;
+use Navard\Shortcode\CategoryTable;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -35,8 +36,6 @@ final class Plugin
             return;
         }
 
-        (new Taxonomies())->hooks();
-
         (new Menu())->hooks();
         (new Settings())->hooks();
         (new ProductPanel())->hooks();
@@ -47,6 +46,8 @@ final class Plugin
         (new Scheduler())->hooks();
         (new Endpoint())->hooks();
         (new Frontend())->hooks();
+        (new CategoryTable())->hooks();
+        (new Archive())->hooks();
     }
 
     public function woocommerce_active(): bool
@@ -72,8 +73,6 @@ final class Plugin
         if (! get_option(Config::CRON_SECRET)) {
             update_option(Config::CRON_SECRET, wp_generate_password(40, false, false));
         }
-        // Register taxonomy immediately so it exists right after activation.
-        (new Taxonomies())->register_all();
         flush_rewrite_rules();
     }
 

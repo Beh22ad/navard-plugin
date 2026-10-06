@@ -15,6 +15,7 @@ final class Settings
     public function hooks(): void
     {
         add_action('admin_post_navard_save_settings', [$this, 'save']);
+        add_action('admin_post_navard_save_table_settings', [$this, 'save_table']);
     }
 
     public function render_page(): void
@@ -42,8 +43,8 @@ final class Settings
                         <?php else : ?>
                             <em style="margin-right:16px;color:#888">سرور اضطراری تنظیم نشده است</em>
                         <?php endif; ?>
-                        <p class="description">آدرس فعلی: <code dir="ltr"><?php echo esc_html(Config::endpoint($ep)); ?></code>
-                        </p>
+                        <p class="description">آدرس فعلی: <code
+                                dir="ltr"><?php echo esc_html(Config::endpoint($ep)); ?></code></p>
                     </td>
                 </tr>
                 <tr>
@@ -112,6 +113,49 @@ final class Settings
 
             <?php submit_button('ذخیره تنظیمات'); ?>
         </form>
+    <?php
+    }
+
+    public function render_table_page(): void
+    {
+        $s       = Config::all();
+        $replace = ('yes' === (string) ($s['replace_cat_archive'] ?? 'no'));
+        $example = '[navard cat="angel--aluminium"]';
+    ?>
+        <div class="navard-op" dir="rtl">
+            <h2>جدول محصولات</h2>
+
+            <p>برای نمایش محصولات یک دسته‌بندی به‌صورت جدول، از شورت‌کد زیر در هر برگه یا نوشته استفاده کنید:</p>
+
+            <p><code dir="ltr"><?php echo esc_html($example); ?></code></p>
+
+            <p class="description">
+                مقدار <code>cat</code> همان اسلاگ دسته‌بندی است. برای پیدا کردن اسلاگ، به
+                <strong>محصولات ← دسته‌ها</strong> بروید و روی نام دسته کلیک کنید؛ فیلد «نامک» همان اسلاگ است.
+            </p>
+
+            <hr>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <input type="hidden" name="action" value="navard_save_table_settings">
+                <?php wp_nonce_field('navard_save_table_settings'); ?>
+
+                <h3>جایگزینی صفحه دسته‌بندی ووکامرس</h3>
+
+                <p>
+                    <label>
+                        <input type="checkbox" name="replace_cat_archive" value="yes" <?php checked($replace); ?>>
+                        نمایش دسته‌بندی‌های ووکامرس به‌صورت جدول نورد
+                    </label>
+                </p>
+
+                <p class="description" style="color:#b32d2e;">
+                    ⚠ این آپشن برای تم نورد طراحی شده است، اگر از تم دیگری استفاده می‌کنید ممکن است به درستی کار نکند.
+                </p>
+
+                <?php submit_button('ذخیره تنظیمات'); ?>
+            </form>
+        </div>
 <?php
     }
 
@@ -122,19 +166,38 @@ final class Settings
         }
         check_admin_referer('navard_save_settings');
 
-        $in = wp_unslash($_POST);
+        $in   = wp_unslash($_POST);
+        $prev = Config::all();
+
         $data = [
-            'endpoint'      => in_array($in['endpoint'] ?? 'main', ['main', 'emergency'], true) ? $in['endpoint'] : 'main',
-            'api_key'       => sanitize_text_field($in['api_key'] ?? ''),
-            'fallback'      => in_array($in['fallback'] ?? 'keep', ['keep', 'contact'], true) ? $in['fallback'] : 'keep',
-            'mod_type'      => in_array($in['mod_type'] ?? 'none', ['none', 'percent', 'fixed'], true) ? $in['mod_type'] : 'none',
-            'mod_value'     => sanitize_text_field($in['mod_value'] ?? ''),
-            'round_enabled' => (($in['round_enabled'] ?? '') === 'yes') ? 'yes' : 'no',
-            'round_unit'    => sanitize_text_field($in['round_unit'] ?? ''),
+            'endpoint'            => in_array($in['endpoint'] ?? 'main', ['main', 'emergency'], true) ? $in['endpoint'] : 'main',
+            'api_key'             => sanitize_text_field($in['api_key'] ?? ''),
+            'fallback'            => in_array($in['fallback'] ?? 'keep', ['keep', 'contact'], true) ? $in['fallback'] : 'keep',
+            'mod_type'            => in_array($in['mod_type'] ?? 'none', ['none', 'percent', 'fixed'], true) ? $in['mod_type'] : 'none',
+            'mod_value'           => sanitize_text_field($in['mod_value'] ?? ''),
+            'round_enabled'       => (($in['round_enabled'] ?? '') === 'yes') ? 'yes' : 'no',
+            'round_unit'          => sanitize_text_field($in['round_unit'] ?? ''),
+            'replace_cat_archive' => (string) ($prev['replace_cat_archive'] ?? 'no'),
         ];
 
         update_option(Config::OPTION_KEY, $data);
         wp_safe_redirect(add_query_arg(['page' => Menu::SLUG, 'tab' => 'general', 'saved' => 1], admin_url('admin.php')));
+        exit;
+    }
+
+    public function save_table(): void
+    {
+        if (! current_user_can('manage_woocommerce')) {
+            wp_die('دسترسی غیرمجاز');
+        }
+        check_admin_referer('navard_save_table_settings');
+
+        $in   = wp_unslash($_POST);
+        $data = Config::all();
+        $data['replace_cat_archive'] = (($in['replace_cat_archive'] ?? '') === 'yes') ? 'yes' : 'no';
+
+        update_option(Config::OPTION_KEY, $data);
+        wp_safe_redirect(add_query_arg(['page' => Menu::SLUG, 'tab' => 'table', 'saved' => 1], admin_url('admin.php')));
         exit;
     }
 }

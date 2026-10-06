@@ -40,6 +40,7 @@ final class Menu
             'general' => 'عمومی',
             'import'  => 'درون‌ریزی',
             'update'  => 'بروز رسانی قیمت‌ها',
+            'table'   => 'جدول محصولات',
             'log'     => 'لاگ',
         ];
         if (! isset($tabs[$tab])) {
@@ -62,6 +63,9 @@ final class Menu
                 break;
             case 'update':
                 (new AjaxUpdate())->render_page();
+                break;
+            case 'table':
+                (new Settings())->render_table_page();
                 break;
             case 'log':
                 (new AjaxLog())->render_page();
@@ -98,7 +102,7 @@ final class Menu
         }
 
         $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'general';
-        if ('general' === $tab) {
+        if ('general' === $tab || 'table' === $tab) {
             wp_enqueue_script('navard-settings', NAVARD_URL . 'assets/js/settings.js', ['navard-common'], NAVARD_VERSION, true);
         } elseif ('import' === $tab) {
             wp_enqueue_script('navard-import', NAVARD_URL . 'assets/js/import.js', ['navard-common'], NAVARD_VERSION, true);

@@ -8,10 +8,6 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Turns a raw API product dict + category context into a normalized shape
- * that Importer/Updater can apply uniformly.
- */
 final class Mapper
 {
 
@@ -21,7 +17,6 @@ final class Mapper
             return (string) $raw['عنوان کالا'];
         }
 
-        // First two non-meta values in JSON order.
         $parts = [];
         $skip  = ['price', 'قیمت (تومان)', 'نوسان قیمت', 'id', 'priceHistory'];
         foreach ($raw as $k => $v) {
@@ -55,17 +50,18 @@ final class Mapper
     }
 
     /**
-     * Extract Persian-digit/Shamsi "last update" string from a product dict if present.
-     * Falls back to the group-level last_update passed in.
+     * Returns the group-level last_update. Never looks inside the product.
+     * If a product dict carries its own last_update, prefer it; otherwise use the group value.
      */
-    public static function last_update(array $raw, string $fallback): string
+    public static function last_update(array $raw, string $group_last_update): string
     {
-        foreach (['last_update', 'آخرین بروزرسانی'] as $k) {
-            if (! empty($raw[$k]) && is_scalar($raw[$k])) {
-                return (string) $raw[$k];
+        if (isset($raw['last_update']) && is_scalar($raw['last_update'])) {
+            $v = trim((string) $raw['last_update']);
+            if ('' !== $v) {
+                return $v;
             }
         }
-        return $fallback;
+        return trim($group_last_update);
     }
 
     public static function checked_at(): string

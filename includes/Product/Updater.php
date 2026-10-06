@@ -41,7 +41,9 @@ final class Updater
     public function update_one(int $product_id, string $api_id, array $map): array
     {
         if (! isset($map[$api_id])) {
-            return ['ok' => false, 'error' => "محصول {$api_id} در پاسخ API یافت نشد"];
+            // Product no longer exists in the API under this category.
+            // Not an error — just skip it.
+            return ['ok' => true, 'product_id' => $product_id, 'skipped' => true];
         }
 
         $raw   = $map[$api_id]['raw'];
@@ -66,7 +68,6 @@ final class Updater
             }
         }
 
-        // Meta (last_update / checked_at / price change / history).
         update_post_meta($product_id, Meta::LAST_UPDATE, Mapper::last_update($raw, (string) ($group['last_update'] ?? '')));
         update_post_meta($product_id, Meta::CHECKED_AT, Mapper::checked_at());
 
@@ -74,7 +75,7 @@ final class Updater
             update_post_meta($product_id, Meta::PRICE_CHANGE, sanitize_text_field((string) $raw['نوسان قیمت']));
         }
         if (! empty($raw['priceHistory']) && is_array($raw['priceHistory'])) {
-            update_post_meta($product_id, Meta::PRICE_HISTORY, wp_json_encode(array_slice($raw['priceHistory'], -50)));
+            update_post_meta($product_id, Meta::PRICE_HISTORY, wp_json_encode(array_slice($raw['priceHistory'], -50), JSON_UNESCAPED_UNICODE));
         }
 
         return ['ok' => true, 'product_id' => $product_id];
