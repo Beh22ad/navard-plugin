@@ -1,0 +1,13 @@
+#navard_product_data .description a {
+    margin-right: 10px;
+    text-decoration: underline;
+}
+
+#navard_product_data input[readonly] {
+    background-color: #f6f7f7;
+    cursor: not-allowed;
+}
+
+#navard_product_data ul.wc-radios li {
+    margin-bottom: 5px;
+}

@@ -1,0 +1,18 @@
+.navard-wrap { font-family: Tahoma, sans-serif; }
+.navard-wrap .nav-tab-wrapper { margin-bottom: 16px; }
+.navard-form .form-table th { width: 220px; }
+.navard-ltr { direction: ltr; text-align: left; }
+.navard-status { margin-right: 10px; font-weight: 600; }
+.navard-status.ok { color: #1a7f37; }
+.navard-status.err { color: #b32d2e; }
+.navard-progress {
+  height: 22px; background: #f0f0f1; border: 1px solid #c3c4c7;
+  border-radius: 4px; overflow: hidden; max-width: 640px; margin: 12px 0;
+}
+.navard-progress-bar { height: 100%; width: 0; background: #2271b1; transition: width .25s; }
+.navard-log {
+  max-height: 260px; overflow: auto; background: #fff; border: 1px solid #dcdcde;
+  padding: 8px 10px; max-width: 640px; font-family: monospace; direction: rtl;
+}
+.navard-log div { padding: 2px 0; color: #b32d2e; }
+.navard-radios label { display: inline-block; margin: 2px 0; }
