@@ -10,6 +10,7 @@ use Navard\Admin\AjaxUpdate;
 use Navard\Admin\Menu;
 use Navard\Admin\ProductPanel;
 use Navard\Admin\Settings;
+use Navard\Admin\UpdateChecker;
 use Navard\Cron\Endpoint;
 use Navard\Cron\Scheduler;
 use Navard\Product\Frontend;
@@ -46,12 +47,15 @@ final class Plugin
         (new AjaxUpdate())->hooks();
         (new AjaxLog())->hooks();
         (new AjaxChart())->hooks();
+        (new UpdateChecker())->hooks();
         (new Scheduler())->hooks();
         (new Endpoint())->hooks();
         (new Frontend())->hooks();
         (new CategoryTable())->hooks();
         (new Archive())->hooks();
         (new Search())->hooks();
+
+        UpdateChecker::registerCacheCleaner(NAVARD_FILE);
     }
 
     public function woocommerce_active(): bool

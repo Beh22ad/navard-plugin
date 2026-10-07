@@ -29,7 +29,6 @@
     });
   }
 
-  // "1405/07/06" -> "07/06" ; anything else is returned unchanged.
   function shortDate(s) {
     const str = String(s);
     const m = str.match(/^\s*\d{4}\/(\d{1,2}\/\d{1,2})\s*$/);
@@ -42,13 +41,9 @@
     openModal();
   }
 
-  function niceCeil(v) {
-    if (v <= 0) return 0;
-    const mag = Math.pow(10, Math.floor(Math.log10(v)));
-    return Math.ceil(v / mag) * mag;
-  }
-
+  // Pick a "nice" step so we get roughly `ticks` divisions between 0 and range.
   function niceStep(range, ticks) {
+    if (range <= 0) return 1;
     const rough = range / Math.max(1, ticks);
     const mag   = Math.pow(10, Math.floor(Math.log10(rough)));
     const norm  = rough / mag;
@@ -62,7 +57,7 @@
 
   function buildSVG(labels, values) {
     const W = 700, H = 400;
-    const padL = 80, padR = 30, padT = 40, padB = 90;
+    const padL = 90, padR = 30, padT = 40, padB = 90;
     const innerW = W - padL - padR;
     const innerH = H - padT - padB;
 
@@ -76,12 +71,27 @@
 
     const rawMin = Math.min.apply(null, values);
     const rawMax = Math.max.apply(null, values);
-    const rawRange = (rawMax - rawMin) || Math.max(1, rawMax * 0.1);
+    let rawRange = rawMax - rawMin;
+    if (rawRange <= 0) rawRange = Math.max(1, Math.abs(rawMax) * 0.02);
 
-    const step = niceStep(rawRange, 5);
+    // Desired number of grid lines in the vertical axis.
+    const desiredTicks = 6;
+
+    // Pick a step based on the padded range and the desired tick count.
+    const padded = rawRange * 1.2;
+    let step = niceStep(padded, desiredTicks);
+
+    // Guard: never let step be smaller than 1.
+    if (step < 1) step = 1;
+
+    // Bottom snaps down to the nearest step below (rawMin - 10%).
     const yBottom = Math.max(0, Math.floor((rawMin - rawRange * 0.1) / step) * step);
-    const yTop    = niceCeil(rawMax + rawRange * 0.1);
-    const ySpan   = (yTop - yBottom) || 1;
+
+    // Top snaps up to the nearest step above (rawMax + 10%).
+    const yTopRaw = rawMax + rawRange * 0.1;
+    const yTop    = Math.ceil(yTopRaw / step) * step;
+
+    const ySpan = (yTop - yBottom) || 1;
 
     const points = values.map(function (v, i) {
       const x = n > 1 ? xStart + stepX * i : (xStart + xEnd) / 2;
@@ -91,8 +101,11 @@
 
     const poly = points.map(function (p) { return p.x + ',' + p.y; }).join( ' ');
 
+    // Y axis grid + labels.
     let gridY = '';
-    const tickCount = Math.max(2, Math.round(ySpan / step));
+    const totalTicks = Math.floor(ySpan / step);
+    const tickCount  = Math.min(totalTicks, 12); // hard cap
+
     for (let i = 0; i <= tickCount; i++) {
       const value = yBottom + step * i;
       if (value > yTop) break;
@@ -101,7 +114,6 @@
       gridY += '<text x="' + (padL - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="#888">' + fmt(value) + '</text>';
     }
 
-    // X axis labels — horizontal, no rotation, year trimmed.
     let labelsSvg = '';
     const labelStep = Math.max(1, Math.ceil(n / 8));
     points.forEach(function (p, i) {
@@ -109,7 +121,6 @@
       labelsSvg += '<text x="' + p.x + '" y="' + (padT + innerH + 22) + '" text-anchor="middle" font-size="11" fill="#666">' + esc(shortDate(labels[i])) + '</text>';
     });
 
-    // Axis titles
     const xTitleY = padT + innerH + 60;
     const axisX = '<text x="' + (padL + innerW / 2) + '" y="' + xTitleY + '" text-anchor="middle" font-size="12" fill="#555" font-weight="600">' + esc(cfg.i18n.xaxis) + '</text>';
 

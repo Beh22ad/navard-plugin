@@ -13,6 +13,6 @@
 }
 
 #woocommerce-product-data ul.wc-tabs li.navard_options_tab a::before {
-            content: "\f15e"; /* dashicons-controls-repeat */
+            content: "\f515";
             font-family: dashicons;
         }
