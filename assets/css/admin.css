@@ -1,18 +1,391 @@
-.navard-wrap { font-family: Tahoma, sans-serif; }
-.navard-wrap .nav-tab-wrapper { margin-bottom: 16px; }
-.navard-form .form-table th { width: 220px; }
-.navard-ltr { direction: ltr; text-align: left; }
-.navard-status { margin-right: 10px; font-weight: 600; }
-.navard-status.ok { color: #1a7f37; }
-.navard-status.err { color: #b32d2e; }
+/* =========================================================
+   Navard — Admin styles (Rank Math inspired)
+   ========================================================= */
+
+.navard-wrap {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+    max-width: 1180px;
+    margin: 20px 20px 40px 0;
+    color: #1d2327;
+}
+
+.navard-wrap h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 8px 0 20px;
+    padding: 0;
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ---------- Tabs ---------- */
+.navard-wrap .nav-tab-wrapper {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 0 24px !important;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb !important;
+}
+
+.navard-wrap .nav-tab {
+    border: none !important;
+    background: transparent !important;
+    color: #50575e !important;
+    padding: 10px 18px !important;
+    margin: 0 !important;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px !important;
+    transition: background-color .15s ease, color .15s ease;
+    line-height: 1.2;
+}
+
+.navard-wrap .nav-tab:hover {
+    background: #f0f6fc !important;
+    color: #2271b1 !important;
+}
+
+.navard-wrap .nav-tab.nav-tab-active {
+    background: #2271b1 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(34, 113, 177, 0.25);
+}
+
+/* ---------- Cards / panels ---------- */
+.navard-form,
+.navard-op {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px 28px 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+    max-width: 100%;
+}
+
+.navard-form h2,
+.navard-op h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 28px 0 4px;
+    padding: 0 0 12px;
+    border-bottom: 1px solid #eef0f3;
+    color: #1d2327;
+}
+
+.navard-form h2:first-of-type,
+.navard-op h2:first-of-type {
+    margin-top: 0;
+}
+
+.navard-form h3,
+.navard-op h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 22px 0 8px;
+    color: #1d2327;
+}
+
+/* ---------- Form tables ---------- */
+.navard-form .form-table {
+    margin: 4px 0 20px;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.navard-form .form-table th {
+    width: 260px;
+    padding: 16px 20px 16px 0;
+    vertical-align: top;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1d2327;
+    line-height: 1.5;
+}
+
+.navard-form .form-table td {
+    padding: 16px 0;
+    vertical-align: top;
+    font-size: 14px;
+    color: #3c434a;
+}
+
+.navard-form .form-table tr + tr th,
+.navard-form .form-table tr + tr td {
+    border-top: 1px solid #f0f0f1;
+}
+
+/* ---------- Inputs ---------- */
+.navard-form input[type="text"],
+.navard-form input[type="number"],
+.navard-form input[type="password"],
+.navard-form select,
+.navard-form textarea,
+.navard-op input[type="text"],
+.navard-op select,
+.navard-op textarea {
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #1d2327;
+    background: #fff;
+    box-shadow: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+    min-height: 38px;
+}
+
+.navard-form input[type="text"]:focus,
+.navard-form input[type="number"]:focus,
+.navard-form select:focus,
+.navard-form textarea:focus,
+.navard-op input[type="text"]:focus,
+.navard-op select:focus,
+.navard-op textarea:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.15);
+    outline: none;
+}
+
+.navard-form input.regular-text,
+.navard-form input[type="text"].regular-text {
+    max-width: 480px;
+    width: 100%;
+}
+
+.navard-form select {
+    min-width: 260px;
+}
+
+.navard-form textarea.large-text {
+    width: 100%;
+    max-width: 720px;
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    padding: 12px 14px;
+    min-height: 64px;
+}
+
+.navard-ltr {
+    direction: ltr;
+    text-align: left;
+}
+
+/* ---------- Buttons ---------- */
+.navard-form .button,
+.navard-form .button-primary,
+.navard-form .button-secondary,
+.navard-op .button,
+.navard-op .button-primary {
+    border-radius: 8px !important;
+    padding: 8px 18px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    min-height: 38px;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
+    transition: background-color .15s ease, transform .05s ease;
+}
+
+.navard-form .button-primary,
+.navard-op .button-primary {
+    background: #2271b1 !important;
+    border-color: #2271b1 !important;
+    color: #fff !important;
+}
+
+.navard-form .button-primary:hover,
+.navard-op .button-primary:hover {
+    background: #135e96 !important;
+    border-color: #135e96 !important;
+}
+
+.navard-form .button-primary:active,
+.navard-op .button-primary:active {
+    transform: translateY(1px);
+}
+
+.navard-form .button:not(.button-primary),
+.navard-op .button:not(.button-primary) {
+    background: #f6f7f7 !important;
+    border-color: #d0d5dd !important;
+    color: #2271b1 !important;
+}
+
+.navard-form .button:not(.button-primary):hover,
+.navard-op .button:not(.button-primary):hover {
+    background: #f0f6fc !important;
+    border-color: #2271b1 !important;
+}
+
+.navard-form p.submit {
+    margin: 24px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid #eef0f3;
+}
+
+/* ---------- Descriptions and notices ---------- */
+.navard-form .description,
+.navard-op .description {
+    font-size: 13px;
+    color: #667085;
+    line-height: 1.7;
+    margin-top: 6px;
+}
+
+.navard-form .description code,
+.navard-op .description code {
+    background: #f0f6fc;
+    color: #135e96;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+
+.navard-op code {
+    background: #f0f6fc;
+    color: #135e96;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    direction: ltr;
+    display: inline-block;
+}
+
+/* ---------- Status text ---------- */
+.navard-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #667085;
+}
+
+.navard-status.ok {
+    color: #1a7f37;
+}
+
+.navard-status.err {
+    color: #b32d2e;
+}
+
+/* ---------- Progress ---------- */
 .navard-progress {
-  height: 22px; background: #f0f0f1; border: 1px solid #c3c4c7;
-  border-radius: 4px; overflow: hidden; max-width: 640px; margin: 12px 0;
+    height: 26px;
+    background: #f0f0f1;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    max-width: 680px;
+    margin: 16px 0 8px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
-.navard-progress-bar { height: 100%; width: 0; background: #2271b1; transition: width .25s; }
+
+.navard-progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #2271b1, #4a90d9);
+    transition: width .3s ease;
+    border-radius: 999px;
+}
+
+/* ---------- Log box ---------- */
 .navard-log {
-  max-height: 260px; overflow: auto; background: #fff; border: 1px solid #dcdcde;
-  padding: 8px 10px; max-width: 640px; font-family: monospace; direction: rtl;
+    max-height: 300px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    max-width: 720px;
+    margin-top: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    direction: rtl;
+    line-height: 1.7;
 }
-.navard-log div { padding: 2px 0; color: #b32d2e; }
-.navard-radios label { display: inline-block; margin: 2px 0; }
+
+.navard-log div {
+    padding: 2px 0;
+    color: #b32d2e;
+}
+
+.navard-log div + div {
+    border-top: 1px dashed #f0f0f1;
+}
+
+/* ---------- Radios / checks ---------- */
+.navard-radios label {
+    display: inline-block;
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+/* ---------- Links in tables ---------- */
+.navard-wrap a {
+    color: #2271b1;
+    text-decoration: none;
+}
+
+.navard-wrap a:hover {
+    color: #135e96;
+    text-decoration: underline;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 782px) {
+    .navard-wrap {
+        margin: 12px 12px 24px 0;
+    }
+
+    .navard-form,
+    .navard-op {
+        padding: 18px 16px 22px;
+    }
+
+    .navard-form .form-table th,
+    .navard-form .form-table td {
+        display: block;
+        width: 100%;
+        padding: 8px 0;
+        border: none !important;
+    }
+
+    .navard-form .form-table th {
+        padding-top: 16px;
+        border-top: 1px solid #f0f0f1 !important;
+    }
+
+    .navard-form .form-table tr:first-child th {
+        border-top: none !important;
+    }
+
+    .navard-form select {
+        min-width: 100%;
+        width: 100%;
+    }
+
+    .navard-wrap .nav-tab {
+        flex: 1 0 auto;
+        text-align: center;
+    }
+}
+
+.navard-status a {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+}

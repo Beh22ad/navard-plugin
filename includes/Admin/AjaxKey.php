@@ -42,7 +42,11 @@ final class AjaxKey
 
         if (! $res->ok) {
             delete_transient(self::KEY_OK_TRANSIENT);
-            wp_send_json_error(['message' => 'کلید نامعتبر است یا سرور پاسخ نداد: ' . $res->error]);
+
+            $msg = 'کلید نامعتبر است یا سرور پاسخ نداد: ' . $res->error
+                . ' — <a href="https://mrnargil.ir/products/navard-membership" target="_blank" rel="noopener">دریافت کلید دسترسی</a>';
+
+            wp_send_json_error(['message' => $msg]);
         }
 
         $settings             = Config::all();
@@ -52,7 +56,6 @@ final class AjaxKey
 
         delete_transient(Config::TRANSIENT_LIST);
 
-        // Remember that this key was verified, for 7 days.
         set_transient(self::KEY_OK_TRANSIENT, 1, 7 * DAY_IN_SECONDS);
 
         wp_send_json_success([

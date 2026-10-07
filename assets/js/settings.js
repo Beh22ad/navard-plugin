@@ -5,7 +5,7 @@
 
   if (btn && st && keyEl) {
     btn.addEventListener('click', async () => {
-      st.textContent = 'در حال بررسی...';
+      st.innerHTML = 'در حال بررسی...';
       st.className = 'navard-status';
 
       const epEl = document.querySelector('input[name="endpoint"]:checked');
@@ -19,7 +19,8 @@
       try {
         const r = await fetch(window.NavardCfg.ajax, { method: 'POST', body });
         const j = await r.json();
-        st.textContent = (j.data && j.data.message) || 'ناموفق';
+        const msg = (j.data && j.data.message) || 'ناموفق';
+        st.innerHTML = msg;
         st.className = 'navard-status ' + (j.success ? 'ok' : 'err');
       } catch (e) {
         st.textContent = 'خطای شبکه';
@@ -52,7 +53,7 @@
     syncMod();
   }
 
-  const roundChk = document.getElementById('navard-round-enabled');
+  const roundChk  = document.getElementById('navard-round-enabled');
   const roundWrap = document.querySelector('.navard-round-unit-wrap');
 
   function syncRound() {

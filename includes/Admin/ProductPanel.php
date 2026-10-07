@@ -45,7 +45,7 @@ final class ProductPanel
         $round = (string) get_post_meta($id, Meta::ROUND_ENABLED, true);
         $runi  = (string) get_post_meta($id, Meta::ROUND_UNIT, true);
 
-        $list_url = Config::endpoint() . '/list';
+        $list_url = "https://mrnargil.ir/products/navard-membership";
 
         echo '<div id="navard_product_data" class="panel woocommerce_options_panel hidden">';
         wp_nonce_field('navard_save_product', 'navard_product_nonce');
