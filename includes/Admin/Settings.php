@@ -20,11 +20,11 @@ final class Settings
 
     public function render_page(): void
     {
-        $s      = Config::all();
-        $eps    = Config::endpoints();
-        $ep     = $s['endpoint'];
-        $secret = (string) get_option(Config::CRON_SECRET, '');
-        $cron   = rest_url('navard/v1/cron/update');
+        $s         = Config::all();
+        $available = Config::available_endpoints();
+        $ep        = (string) $s['endpoint'];
+        $secret    = (string) get_option(Config::CRON_SECRET, '');
+        $cron      = rest_url('navard/v1/cron/update');
 ?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="navard-form">
             <input type="hidden" name="action" value="navard_save_settings">
@@ -35,16 +35,14 @@ final class Settings
                 <tr>
                     <th>نقطه اتصال</th>
                     <td>
-                        <label><input type="radio" name="endpoint" value="main" <?php checked($ep, 'main'); ?>> سرور
-                            اصلی</label>
-                        <?php if (! empty($eps['emergency'])) : ?>
-                            <label style="margin-right:16px"><input type="radio" name="endpoint" value="emergency"
-                                    <?php checked($ep, 'emergency'); ?>> سرور اضطراری</label>
-                        <?php else : ?>
-                            <em style="margin-right:16px;color:#888">سرور اضطراری تنظیم نشده است</em>
-                        <?php endif; ?>
-                        <p class="description">آدرس فعلی: <code
-                                dir="ltr"><?php echo esc_html(Config::endpoint($ep)); ?></code></p>
+                        <select name="endpoint">
+                            <?php if (isset($available['main'])) : ?>
+                                <option value="main" <?php selected($ep, 'main'); ?>>سرور اصلی</option>
+                            <?php endif; ?>
+                            <?php if (isset($available['emergency'])) : ?>
+                                <option value="emergency" <?php selected($ep, 'emergency'); ?>>سرور اضطراری</option>
+                            <?php endif; ?>
+                        </select>
                     </td>
                 </tr>
                 <tr>
@@ -92,10 +90,11 @@ final class Settings
                     </td>
                 </tr>
                 <tr>
-                    <th>گرد کردن قیمت</th>
+                    <th>روند کردن قیمت</th>
                     <td>
                         <label><input type="checkbox" id="navard-round-enabled" name="round_enabled" value="yes"
-                                <?php checked($s['round_enabled'], 'yes'); ?>> روند کردن قیمت</label>
+                                <?php checked($s['round_enabled'], 'yes'); ?>> برای روند کردن قیمت دریافتی از api این گزینه را
+                            روشن کنید</label>
                         <p class="navard-round-unit-wrap">
                             <input type="text" dir="ltr" class="navard-ltr" name="round_unit"
                                 value="<?php echo esc_attr((string) $s['round_unit']); ?>" placeholder="100 / 1000 / 100000">
@@ -104,12 +103,12 @@ final class Settings
                 </tr>
             </table>
 
-            <h2>کرون خودکار</h2>
-            <p>برای اجرای خودکار بروزرسانی از طریق کرون سی‌پنل، این دستور را در Cron Jobs قرار دهید (هر ۸ ساعت یا ۳ بار در روز):
-            </p>
+            <h2>تنظیمات cpanel</h2>
+            <p>افزونه روزانه سه بار قیمت‌ها را بروز رسانی می‌کند. اگر به هر دلیلی کرون جاب وردپرس به خوبی کار نکرد، دستور زیر را
+                در کرون جاب cpanel هاست خود تنظیم کنید. روزانه ۲ یا ۳ بار.</p>
             <textarea dir="ltr" rows="3" class="large-text code"
                 readonly>curl -s "<?php echo esc_url($cron); ?>?secret=<?php echo esc_attr($secret); ?>" > /dev/null 2>&1</textarea>
-            <p class="description">برنامه داخلی وردپرس: <?php echo esc_html(Scheduler::describe()); ?></p>
+            <p class="description">آپدیت بعدی: <?php echo esc_html(Scheduler::describe()); ?></p>
 
             <?php submit_button('ذخیره تنظیمات'); ?>
         </form>
@@ -120,18 +119,20 @@ final class Settings
     {
         $s       = Config::all();
         $replace = ('yes' === (string) ($s['replace_cat_archive'] ?? 'no'));
-        $example = '[navard cat="angel--aluminium"]';
+        $hide    = ('yes' === (string) ($s['hide_product_page'] ?? 'no'));
     ?>
         <div class="navard-op" dir="rtl">
             <h2>جدول محصولات</h2>
 
-            <p>برای نمایش محصولات یک دسته‌بندی به‌صورت جدول، از شورت‌کد زیر در هر برگه یا نوشته استفاده کنید:</p>
+            <p>برای نمایش محصولات یک دسته‌بندی یا برچسب به‌صورت جدول، از شورت‌کد زیر در هر برگه یا نوشته استفاده کنید:</p>
 
-            <p><code dir="ltr"><?php echo esc_html($example); ?></code></p>
+            <p><code dir="ltr">[navard cat="angel--aluminium"]</code></p>
+            <p><code dir="ltr">[navard tag="ورق-st52-ضخامت-80"]</code></p>
 
             <p class="description">
-                مقدار <code>cat</code> همان اسلاگ دسته‌بندی است. برای پیدا کردن اسلاگ، به
-                <strong>محصولات ← دسته‌ها</strong> بروید و روی نام دسته کلیک کنید؛ فیلد «نامک» همان اسلاگ است.
+                مقدار <code>cat</code> یا <code>tag</code> همان slug (نامک) دسته یا برچسب است. برای پیدا کردن آن، به
+                <strong>محصولات ← دسته‌ها</strong> یا <strong>محصولات ← برچسب‌ها</strong> بروید و روی نام مورد نظر کلیک کنید؛
+                فیلد «نامک» همان slug است.
             </p>
 
             <hr>
@@ -140,17 +141,25 @@ final class Settings
                 <input type="hidden" name="action" value="navard_save_table_settings">
                 <?php wp_nonce_field('navard_save_table_settings'); ?>
 
-                <h3>جایگزینی صفحه دسته‌بندی ووکامرس</h3>
+                <h3>تنظیمات نمایش</h3>
+                <p class="description">در این بخش می‌توانید نحوه نمایش صفحات پیش‌فرض ووکامرس را تغییر دهید.</p>
+
+                <p class="description" style="color:#b32d2e;">
+                    ⚠ این گزینه‌ها برای تم نورد طراحی شده‌اند و ممکن است در تم‌های دیگر به درستی کار نکنند.
+                </p>
 
                 <p>
                     <label>
                         <input type="checkbox" name="replace_cat_archive" value="yes" <?php checked($replace); ?>>
-                        نمایش دسته‌بندی‌های ووکامرس به‌صورت جدول نورد
+                        نمایش صفحه دسته‌بندی و تگ ووکامرس به صورت جدول محصولات
                     </label>
                 </p>
 
-                <p class="description" style="color:#b32d2e;">
-                    ⚠ این آپشن برای تم نورد طراحی شده است، اگر از تم دیگری استفاده می‌کنید ممکن است به درستی کار نکند.
+                <p>
+                    <label>
+                        <input type="checkbox" name="hide_product_page" value="yes" <?php checked($hide); ?>>
+                        ریدایرکت صفحه محصول به صفحه دسته‌بندی
+                    </label>
                 </p>
 
                 <?php submit_button('ذخیره تنظیمات'); ?>
@@ -168,9 +177,15 @@ final class Settings
 
         $in   = wp_unslash($_POST);
         $prev = Config::all();
+        $available = Config::available_endpoints();
+
+        $ep = (string) ($in['endpoint'] ?? 'main');
+        if (! isset($available[$ep])) {
+            $ep = 'main';
+        }
 
         $data = [
-            'endpoint'            => in_array($in['endpoint'] ?? 'main', ['main', 'emergency'], true) ? $in['endpoint'] : 'main',
+            'endpoint'            => $ep,
             'api_key'             => sanitize_text_field($in['api_key'] ?? ''),
             'fallback'            => in_array($in['fallback'] ?? 'keep', ['keep', 'contact'], true) ? $in['fallback'] : 'keep',
             'mod_type'            => in_array($in['mod_type'] ?? 'none', ['none', 'percent', 'fixed'], true) ? $in['mod_type'] : 'none',
@@ -178,6 +193,7 @@ final class Settings
             'round_enabled'       => (($in['round_enabled'] ?? '') === 'yes') ? 'yes' : 'no',
             'round_unit'          => sanitize_text_field($in['round_unit'] ?? ''),
             'replace_cat_archive' => (string) ($prev['replace_cat_archive'] ?? 'no'),
+            'hide_product_page'   => (string) ($prev['hide_product_page'] ?? 'no'),
         ];
 
         update_option(Config::OPTION_KEY, $data);
@@ -194,7 +210,9 @@ final class Settings
 
         $in   = wp_unslash($_POST);
         $data = Config::all();
+
         $data['replace_cat_archive'] = (($in['replace_cat_archive'] ?? '') === 'yes') ? 'yes' : 'no';
+        $data['hide_product_page']   = (($in['hide_product_page'] ?? '') === 'yes') ? 'yes' : 'no';
 
         update_option(Config::OPTION_KEY, $data);
         wp_safe_redirect(add_query_arg(['page' => Menu::SLUG, 'tab' => 'table', 'saved' => 1], admin_url('admin.php')));

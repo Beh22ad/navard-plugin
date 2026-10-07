@@ -11,7 +11,6 @@ final class Scheduler
 
     public const HOOK = 'navard_cron_update';
 
-    /** Three runs per 24h: 02:00, 10:00, 18:00 Tehran. */
     private const SLOTS = [2, 10, 18];
 
     public function hooks(): void
@@ -43,7 +42,6 @@ final class Scheduler
 
     public function run(): void
     {
-        // Kick off one batch; the endpoint engine continues via locks/state.
         $endpoint = new Endpoint();
         $endpoint->run_batch_silent();
     }
@@ -54,7 +52,13 @@ final class Scheduler
         if (! $next) {
             return 'زمان‌بندی نشده';
         }
-        return 'اجرای بعدی: ' . gmdate('Y-m-d H:i:s', $next) . ' (UTC)';
+        try {
+            $dt = new \DateTime('@' . $next);
+            $dt->setTimezone(new \DateTimeZone('Asia/Tehran'));
+            return $dt->format('Y-m-d H:i');
+        } catch (\Exception $e) {
+            return gmdate('Y-m-d H:i', $next);
+        }
     }
 
     private static function next_slot_ts(): int
@@ -72,14 +76,12 @@ final class Scheduler
                 return $candidate->getTimestamp();
             }
         }
-        // All slots passed today → first slot tomorrow.
         $tomorrow = clone $now;
         $tomorrow->modify('+1 day')->setTime(self::SLOTS[0], 0, 0);
         return $tomorrow->getTimestamp();
     }
 }
 
-// Register the custom interval.
 add_filter('cron_schedules', static function ($schedules) {
     $schedules['navard_three_daily'] = [
         'interval' => 8 * HOUR_IN_SECONDS,

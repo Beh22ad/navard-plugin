@@ -2,6 +2,7 @@
 
 namespace Navard;
 
+use Navard\Admin\AjaxChart;
 use Navard\Admin\AjaxImport;
 use Navard\Admin\AjaxKey;
 use Navard\Admin\AjaxLog;
@@ -14,6 +15,7 @@ use Navard\Cron\Scheduler;
 use Navard\Product\Frontend;
 use Navard\Shortcode\Archive;
 use Navard\Shortcode\CategoryTable;
+use Navard\Shortcode\Search;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -43,11 +45,13 @@ final class Plugin
         (new AjaxImport())->hooks();
         (new AjaxUpdate())->hooks();
         (new AjaxLog())->hooks();
+        (new AjaxChart())->hooks();
         (new Scheduler())->hooks();
         (new Endpoint())->hooks();
         (new Frontend())->hooks();
         (new CategoryTable())->hooks();
         (new Archive())->hooks();
+        (new Search())->hooks();
     }
 
     public function woocommerce_active(): bool

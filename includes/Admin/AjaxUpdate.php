@@ -25,7 +25,8 @@ final class AjaxUpdate
 ?>
         <div class="navard-op" dir="rtl">
             <h2>بروز رسانی قیمت‌ها</h2>
-            <p>قیمت محصولاتی که گزینه «آپدیت اتوماتیک» دارند، بر اساس API بروزرسانی می‌شود.</p>
+            <p>از اینجا می‌توانید قیمت‌ها را همین الان بروز رسانی کنید. توجه کنید که بروز رسانی به صورت روزانه و اتوماتیک اجرا
+                می‌شود و نیاز نیست که به صورت دستی این کار را انجام دهید.</p>
             <p>
                 <button type="button" class="button button-primary" id="navard-update-start">شروع بروزرسانی قیمت‌ها</button>
                 <span class="navard-status" id="navard-update-status"></span>
@@ -44,8 +45,7 @@ final class AjaxUpdate
         $this->guard();
 
         $products = Finder::auto_update_products();
-        // group by category slug
-        $groups = [];
+        $groups   = [];
         foreach ($products as $p) {
             $api_id = (string) $p['api_id'];
             if ('' === $api_id) {
@@ -56,14 +56,14 @@ final class AjaxUpdate
         }
 
         $state = [
-            'started'    => time(),
-            'groups'     => $groups,
-            'order'      => array_keys($groups),
-            'g_index'    => 0,
-            'p_offset'   => 0,
-            'processed'  => 0,
-            'total'      => count($products),
-            'errors'     => [],
+            'started'   => time(),
+            'groups'    => $groups,
+            'order'     => array_keys($groups),
+            'g_index'   => 0,
+            'p_offset'  => 0,
+            'processed' => 0,
+            'total'     => count($products),
+            'errors'    => [],
         ];
 
         set_transient(Config::STATE_UPDATE, $state, HOUR_IN_SECONDS);
@@ -88,15 +88,15 @@ final class AjaxUpdate
         $gi      = (int) $state['g_index'];
         $po      = (int) $state['p_offset'];
         $done    = 0;
+        $limit   = Config::batch_update();
 
-        while ($gi < count($order) && $done < Config::BATCH_UPDATE) {
+        while ($gi < count($order) && $done < $limit) {
             $slug  = (string) $order[$gi];
             $items = $state['groups'][$slug];
 
             $response = $updater->get_category_response($slug);
             if (! $response['ok']) {
                 $state['errors'][] = "دسته {$slug}: " . $response['error'];
-                // skip whole group
                 $gi++;
                 $po = 0;
                 continue;
@@ -104,7 +104,7 @@ final class AjaxUpdate
 
             $map = $updater->index_response($response['data']);
 
-            while ($po < count($items) && $done < Config::BATCH_UPDATE) {
+            while ($po < count($items) && $done < $limit) {
                 $item = $items[$po];
                 $r    = $updater->update_one((int) $item['product_id'], (string) $item['api_id'], $map);
                 if (! $r['ok']) {

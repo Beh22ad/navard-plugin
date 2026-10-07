@@ -23,7 +23,7 @@ final class ProductPanel
         $tabs['navard'] = [
             'label'    => 'نورد',
             'target'   => 'navard_product_data',
-            'class'    => ['show_if_simple', 'show_if_variable'],
+            'class'    => ['show_if_simple', 'show_if_variable', 'navard_options_tab'],
             'priority' => 65,
         ];
         return $tabs;

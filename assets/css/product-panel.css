@@ -11,3 +11,8 @@
 #navard_product_data ul.wc-radios li {
     margin-bottom: 5px;
 }
+
+#woocommerce-product-data ul.wc-tabs li.navard_options_tab a::before {
+            content: "\f15e"; /* dashicons-controls-repeat */
+            font-family: dashicons;
+        }

@@ -12,6 +12,8 @@ if (! defined('ABSPATH')) {
 final class AjaxKey
 {
 
+    public const KEY_OK_TRANSIENT = 'navard_key_ok';
+
     public function hooks(): void
     {
         add_action('wp_ajax_navard_check_key', [$this, 'check']);
@@ -29,8 +31,7 @@ final class AjaxKey
             wp_send_json_error(['message' => 'کلید وارد نشده است.']);
         }
 
-        // Validate against the currently selected endpoint so the saved key matches it.
-        $endpoint = isset($_POST['endpoint']) ? sanitize_key(wp_unslash($_POST['endpoint'])) : '';
+        $endpoint  = isset($_POST['endpoint']) ? sanitize_key(wp_unslash($_POST['endpoint'])) : '';
         $endpoints = Config::endpoints();
         if (! isset($endpoints[$endpoint])) {
             $endpoint = (string) Config::get('endpoint', 'main');
@@ -40,17 +41,19 @@ final class AjaxKey
         $res = (new Client($base, $key))->ping();
 
         if (! $res->ok) {
+            delete_transient(self::KEY_OK_TRANSIENT);
             wp_send_json_error(['message' => 'کلید نامعتبر است یا سرور پاسخ نداد: ' . $res->error]);
         }
 
-        // Key is valid → persist it along with the endpoint used for the test.
-        $settings              = Config::all();
-        $settings['api_key']   = $key;
-        $settings['endpoint']  = $endpoint;
+        $settings             = Config::all();
+        $settings['api_key']  = $key;
+        $settings['endpoint'] = $endpoint;
         update_option(Config::OPTION_KEY, $settings);
 
-        // Bust cached /list so the next operation uses the new key.
         delete_transient(Config::TRANSIENT_LIST);
+
+        // Remember that this key was verified, for 7 days.
+        set_transient(self::KEY_OK_TRANSIENT, 1, 7 * DAY_IN_SECONDS);
 
         wp_send_json_success([
             'message'  => 'کلید معتبر است و ذخیره شد.',

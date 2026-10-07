@@ -25,7 +25,6 @@ final class Config
     public const TTL_CATEGORY = 15 * MINUTE_IN_SECONDS;
     public const TTL_GROUP    = 30 * MINUTE_IN_SECONDS;
 
-    /** Batch sizes — edit these directly. */
     public const BATCH_IMPORT = 20;
     public const BATCH_UPDATE = 20;
 
@@ -35,6 +34,18 @@ final class Config
             'main'      => untrailingslashit((string) NAVARD_API_MAIN),
             'emergency' => untrailingslashit((string) NAVARD_API_EMERGENCY),
         ];
+    }
+
+    public static function available_endpoints(): array
+    {
+        $all = self::endpoints();
+        $out = [];
+        foreach ($all as $key => $url) {
+            if ('' !== $url) {
+                $out[$key] = $url;
+            }
+        }
+        return $out;
     }
 
     public static function endpoint(?string $which = null): string
@@ -55,6 +66,7 @@ final class Config
             'round_enabled'       => 'no',
             'round_unit'          => '',
             'replace_cat_archive' => 'no',
+            'hide_product_page'   => 'no',
         ];
     }
 

@@ -21,10 +21,19 @@ final class AjaxImport
 
     public function render_page(): void
     {
+        $key_ok = (bool) get_transient(AjaxKey::KEY_OK_TRANSIENT);
 ?>
         <div class="navard-op" dir="rtl">
             <h2>درون‌ریزی محصولات</h2>
             <p>محصولات از API خوانده شده و به صورت دسته‌ای به ووکامرس اضافه یا بروزرسانی می‌شوند.</p>
+
+            <?php if (! $key_ok) : ?>
+                <p class="description" style="color:#b32d2e;">
+                    ⚠ قبل از درون‌ریزی مطمئن شوید که از کلید دسترسی معتبر استفاده می‌کنید، در غیر اینصورت فقط دسته‌های رایگان به
+                    سایت درون‌ریزی می‌شوند.
+                </p>
+            <?php endif; ?>
+
             <p>
                 <button type="button" class="button button-primary" id="navard-import-start">شروع درون‌ریزی</button>
                 <span class="navard-status" id="navard-import-status"></span>
@@ -43,11 +52,11 @@ final class AjaxImport
         $this->guard();
 
         $state = [
-            'started'   => time(),
-            'products'  => [],
-            'offset'    => 0,
-            'total'     => 0,
-            'errors'    => [],
+            'started'  => time(),
+            'products' => [],
+            'offset'   => 0,
+            'total'    => 0,
+            'errors'   => [],
         ];
 
         $parser = new ListParser();
@@ -77,7 +86,7 @@ final class AjaxImport
 
         $offset = (int) $state['offset'];
         $total  = (int) $state['total'];
-        $items  = array_slice($state['products'], $offset, Config::BATCH_IMPORT);
+        $items  = array_slice($state['products'], $offset, Config::batch_import());
 
         $importer = new Importer();
         foreach ($items as $item) {

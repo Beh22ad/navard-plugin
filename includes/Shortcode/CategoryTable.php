@@ -11,6 +11,8 @@ if (! defined('ABSPATH')) {
 final class CategoryTable
 {
 
+    private static bool $modal_printed = false;
+
     public function hooks(): void
     {
         add_shortcode('navard', [$this, 'render']);
@@ -25,6 +27,28 @@ final class CategoryTable
             [],
             NAVARD_VERSION
         );
+
+        wp_register_script(
+            'navard-chart',
+            NAVARD_URL . 'assets/js/price-chart.js',
+            [],
+            NAVARD_VERSION,
+            true
+        );
+
+        // Attach the config at registration time so it can never be printed without it.
+        wp_localize_script('navard-chart', 'NavardChartCfg', [
+            'ajax'  => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('navard_chart'),
+            'i18n'  => [
+                'empty'  => 'تاریخچه قیمت خالی است',
+                'title'  => 'نمودار قیمت',
+                'xaxis'  => 'تاریخ',
+                'yaxis'  => 'تومان',
+                'close'  => 'بستن',
+                'error'  => 'خطا در دریافت اطلاعات',
+            ],
+        ]);
     }
 
     public function render($atts): string
@@ -84,6 +108,7 @@ final class CategoryTable
         }
 
         wp_enqueue_style('navard-shortcode');
+        wp_enqueue_script('navard-chart');
 
         $groups = $this->group($products);
 
@@ -119,13 +144,15 @@ final class CategoryTable
             echo '</tr></thead><tbody>';
 
             foreach ($group['rows'] as $row) {
+                $pid = (int) ($row['__pid'] ?? 0);
+
                 echo '<tr>';
                 foreach ($columns as $col) {
                     $val = isset($row[$col]) ? (string) $row[$col] : '';
                     $cls = ('قیمت (تومان)' === $col) ? ' class="navard-sc-td-price"' : '';
                     echo '<td' . $cls . '>' . esc_html($val) . '</td>';
                 }
-                echo '<td class="navard-sc-td-chart">' . $this->chart_placeholder() . '</td>';
+                echo '<td class="navard-sc-td-chart">' . $this->chart_placeholder($pid) . '</td>';
                 echo '</tr>';
             }
 
@@ -135,12 +162,27 @@ final class CategoryTable
         }
 
         echo '</div>';
+
+        if (! self::$modal_printed) {
+            self::$modal_printed = true;
+            echo '<div id="navard-chart-modal" class="navard-chart-modal" aria-hidden="true">'
+                . '<div class="navard-chart-modal-backdrop" data-navard-close="1"></div>'
+                . '<div class="navard-chart-modal-box" role="dialog" aria-modal="true">'
+                . '<div class="navard-chart-modal-head">'
+                . '<span class="navard-chart-modal-title">نمودار قیمت</span>'
+                . '<button type="button" class="navard-chart-modal-close" data-navard-close="1" aria-label="بستن">×</button>'
+                . '</div>'
+                . '<div class="navard-chart-modal-body" id="navard-chart-modal-body"></div>'
+                . '</div>'
+                . '</div>';
+        }
+
         return (string) ob_get_clean();
     }
 
-    private function chart_placeholder(): string
+    private function chart_placeholder(int $product_id): string
     {
-        return '<span class="navard-sc-chart" role="img" aria-label="نمودار قیمت">'
+        return '<span class="navard-sc-chart" role="button" tabindex="0" aria-label="نمودار قیمت" data-product-id="' . $product_id . '">'
             . '<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" focusable="false">'
             . '<circle cx="16" cy="16" r="15" fill="#c62828"/>'
             . '<rect x="8"  y="17" width="3" height="7"  fill="#fff"/>'
@@ -230,6 +272,8 @@ final class CategoryTable
         $row = [];
         $id  = $product->get_id();
 
+        $row['__pid'] = (string) $id;
+
         if ('yes' === get_post_meta($id, Meta::HAS_TITLE, true)) {
             $title = $product->get_name();
             if ('' !== $title) {
@@ -284,6 +328,9 @@ final class CategoryTable
 
         foreach ($group['rows'] as $row) {
             foreach (array_keys($row) as $key) {
+                if ('__pid' === $key) {
+                    continue;
+                }
                 if (! in_array($key, $order, true)) {
                     $order[] = $key;
                 }
