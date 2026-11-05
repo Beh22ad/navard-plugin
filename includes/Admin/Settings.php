@@ -126,7 +126,7 @@ final class Settings
 
             <p>برای نمایش محصولات یک دسته‌بندی یا برچسب به‌صورت جدول، از شورت‌کد زیر در هر برگه یا نوشته استفاده کنید:</p>
 
-            <p><code dir="ltr">[navard cat="angel--aluminium"]</code></p>
+            <p><code dir="ltr">[navard cat="angel"]</code></p>
             <p><code dir="ltr">[navard tag="ورق-st52-ضخامت-80"]</code></p>
 
             <p class="description">

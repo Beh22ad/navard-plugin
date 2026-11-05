@@ -3,19 +3,25 @@
 
   const cfg = window.NavardChartCfg;
 
+  function getModal() {
+    return document.getElementById('navard-chart-modal');
+  }
+
   function openModal() {
-    const m = document.getElementById('navard-chart-modal');
+    const m = getModal();
     if (m) {
       m.classList.add('is-open');
       m.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
     }
   }
 
   function closeModal() {
-    const m = document.getElementById('navard-chart-modal');
+    const m = getModal();
     if (m) {
       m.classList.remove('is-open');
       m.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
     }
   }
 
@@ -41,7 +47,6 @@
     openModal();
   }
 
-  // Pick a "nice" step so we get roughly `ticks` divisions between 0 and range.
   function niceStep(range, ticks) {
     if (range <= 0) return 1;
     const rough = range / Math.max(1, ticks);
@@ -74,20 +79,12 @@
     let rawRange = rawMax - rawMin;
     if (rawRange <= 0) rawRange = Math.max(1, Math.abs(rawMax) * 0.02);
 
-    // Desired number of grid lines in the vertical axis.
     const desiredTicks = 6;
-
-    // Pick a step based on the padded range and the desired tick count.
     const padded = rawRange * 1.2;
     let step = niceStep(padded, desiredTicks);
-
-    // Guard: never let step be smaller than 1.
     if (step < 1) step = 1;
 
-    // Bottom snaps down to the nearest step below (rawMin - 10%).
     const yBottom = Math.max(0, Math.floor((rawMin - rawRange * 0.1) / step) * step);
-
-    // Top snaps up to the nearest step above (rawMax + 10%).
     const yTopRaw = rawMax + rawRange * 0.1;
     const yTop    = Math.ceil(yTopRaw / step) * step;
 
@@ -99,12 +96,11 @@
       return { x: x, y: y, v: v };
     });
 
-    const poly = points.map(function (p) { return p.x + ',' + p.y; }).join( ' ');
+    const poly = points.map(function (p) { return p.x + ',' + p.y; }).join(' ');
 
-    // Y axis grid + labels.
     let gridY = '';
     const totalTicks = Math.floor(ySpan / step);
-    const tickCount  = Math.min(totalTicks, 12); // hard cap
+    const tickCount  = Math.min(totalTicks, 12);
 
     for (let i = 0; i <= tickCount; i++) {
       const value = yBottom + step * i;

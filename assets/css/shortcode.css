@@ -272,3 +272,24 @@ fill: #c62828;
     color: #888;
     font-weight: 600;
 }
+
+/* "View full list" link shown when shortcode uses num="1" or num="N" */
+.navard-sc-viewall {
+    margin-top: 16px;
+    text-align: center;
+}
+
+.navard-sc-viewall-link {
+	display: inline-block;
+	padding: 8px 11px;
+	color: #c62828;
+	text-decoration: none;
+	border-bottom: 1px solid #c62828;
+	transition: padding 0.25s ease;
+}
+
+.navard-sc-viewall-link:hover {
+	color: #c62828;
+	border-bottom: 1px solid #c62828;
+	padding: 8px 20px;
+}

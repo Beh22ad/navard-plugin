@@ -17,6 +17,7 @@ final class CategoryTable
     {
         add_shortcode('navard', [$this, 'render']);
         add_action('wp_enqueue_scripts', [$this, 'assets']);
+        add_action('wp_footer', [$this, 'maybe_print_modal'], 5);
     }
 
     public function assets(): void
@@ -36,7 +37,6 @@ final class CategoryTable
             true
         );
 
-        // Attach the config at registration time so it can never be printed without it.
         wp_localize_script('navard-chart', 'NavardChartCfg', [
             'ajax'  => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('navard_chart'),
@@ -51,6 +51,28 @@ final class CategoryTable
         ]);
     }
 
+    /**
+     * Print the chart modal once, in wp_footer, outside any tab panel.
+     */
+    public function maybe_print_modal(): void
+    {
+        if (! self::$modal_printed) {
+            return;
+        }
+?>
+        <div id="navard-chart-modal" class="navard-chart-modal" aria-hidden="true">
+            <div class="navard-chart-modal-backdrop" data-navard-close="1"></div>
+            <div class="navard-chart-modal-box" role="dialog" aria-modal="true">
+                <div class="navard-chart-modal-head">
+                    <span class="navard-chart-modal-title">نمودار قیمت</span>
+                    <button type="button" class="navard-chart-modal-close" data-navard-close="1" aria-label="بستن">×</button>
+                </div>
+                <div class="navard-chart-modal-body" id="navard-chart-modal-body"></div>
+            </div>
+        </div>
+<?php
+    }
+
     public function render($atts): string
     {
         $atts = shortcode_atts(
@@ -59,6 +81,7 @@ final class CategoryTable
                 'tag'    => '',
                 'cat_id' => '',
                 'tag_id' => '',
+                'num'    => '',
             ],
             $atts,
             'navard'
@@ -68,10 +91,12 @@ final class CategoryTable
         $tag    = sanitize_text_field((string) $atts['tag']);
         $cat_id = (int) $atts['cat_id'];
         $tag_id = (int) $atts['tag_id'];
+        $num    = (int) $atts['num'];
 
         $term     = null;
         $taxonomy = '';
 
+        // 1) Explicit IDs / slugs take precedence.
         if ($cat_id > 0) {
             $t = get_term($cat_id, 'product_cat');
             if ($t instanceof \WP_Term) {
@@ -98,6 +123,15 @@ final class CategoryTable
             }
         }
 
+        // 2) No explicit arg: auto-detect from the current archive page.
+        if (! $term instanceof \WP_Term) {
+            $detected = $this->detect_current_term();
+            if ($detected) {
+                $term     = $detected['term'];
+                $taxonomy = $detected['taxonomy'];
+            }
+        }
+
         if (! $term instanceof \WP_Term || '' === $taxonomy) {
             return '';
         }
@@ -109,8 +143,27 @@ final class CategoryTable
 
         wp_enqueue_style('navard-shortcode');
         wp_enqueue_script('navard-chart');
+        self::$modal_printed = true;
 
+        // Group products into tables BEFORE applying the limit.
+        // One group = one table (grouped by factory or tag meta).
         $groups = $this->group($products);
+
+        // `num` limits the number of TABLES (groups) shown, not the rows.
+        $limited = false;
+        if ($num > 0 && count($groups) > $num) {
+            $groups  = array_slice($groups, 0, $num, true);
+            $limited = true;
+        }
+
+        // Build the URL to the full term archive for the "view full list" link.
+        $view_all_url = '';
+        if ($limited) {
+            $link = get_term_link($term, $taxonomy);
+            if (! is_wp_error($link)) {
+                $view_all_url = $link;
+            }
+        }
 
         ob_start();
         echo '<div class="navard-shortcode" dir="rtl">';
@@ -161,23 +214,38 @@ final class CategoryTable
             echo '</div>';
         }
 
-        echo '</div>';
-
-        if (! self::$modal_printed) {
-            self::$modal_printed = true;
-            echo '<div id="navard-chart-modal" class="navard-chart-modal" aria-hidden="true">'
-                . '<div class="navard-chart-modal-backdrop" data-navard-close="1"></div>'
-                . '<div class="navard-chart-modal-box" role="dialog" aria-modal="true">'
-                . '<div class="navard-chart-modal-head">'
-                . '<span class="navard-chart-modal-title">نمودار قیمت</span>'
-                . '<button type="button" class="navard-chart-modal-close" data-navard-close="1" aria-label="بستن">×</button>'
-                . '</div>'
-                . '<div class="navard-chart-modal-body" id="navard-chart-modal-body"></div>'
-                . '</div>'
-                . '</div>';
+        // "View full list" link when the tables were limited by `num`.
+        if ('' !== $view_all_url) {
+            echo '<div class="navard-sc-viewall">';
+            echo '<a class="navard-sc-viewall-link" href="' . esc_url($view_all_url) . '">'
+                . 'مشاهده لیست قیمت کامل'
+                . '</a>';
+            echo '</div>';
         }
 
+        echo '</div>';
+
         return (string) ob_get_clean();
+    }
+
+    /**
+     * Detect the current product_cat or product_tag term from the main query.
+     *
+     * @return array{term:\WP_Term,taxonomy:string}|null
+     */
+    private function detect_current_term(): ?array
+    {
+        if (! function_exists('is_tax') && ! function_exists('is_category') && ! function_exists('is_tag')) {
+            return null;
+        }
+
+        $obj = get_queried_object();
+
+        if ($obj instanceof \WP_Term && in_array($obj->taxonomy, ['product_cat', 'product_tag'], true)) {
+            return ['term' => $obj, 'taxonomy' => $obj->taxonomy];
+        }
+
+        return null;
     }
 
     private function chart_placeholder(int $product_id): string
