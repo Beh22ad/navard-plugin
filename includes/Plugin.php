@@ -18,6 +18,7 @@ use Navard\Shortcode\Archive;
 use Navard\Shortcode\CategoryTable;
 use Navard\Shortcode\FilteredTable;
 use Navard\Shortcode\Search;
+use Navard\Shortcode\TagFilteredTable;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -25,7 +26,6 @@ if (! defined('ABSPATH')) {
 
 final class Plugin
 {
-
     private static ?Plugin $instance = null;
 
     public static function instance(): Plugin
@@ -54,10 +54,16 @@ final class Plugin
         (new Frontend())->hooks();
         (new CategoryTable())->hooks();
         (new FilteredTable())->hooks();
+        (new TagFilteredTable())->hooks();
         (new Archive())->hooks();
         (new Search())->hooks();
 
         UpdateChecker::registerCacheCleaner(NAVARD_FILE);
+
+        // TEMP: log once so you can confirm boot() runs.
+        if (isset($_GET['navard_tag_debug'])) {
+            error_log('NAVARD boot() ran. TagFilteredTable registered. URI=' . ($_SERVER['REQUEST_URI'] ?? ''));
+        }
     }
 
     public function woocommerce_active(): bool

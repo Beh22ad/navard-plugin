@@ -161,6 +161,98 @@ final class FilteredTable
                         ];
                     }
                     $out['sample_titles'] = $sample;
+
+                    $inspect = [];
+                    foreach (array_slice($in_cat, 0, 3) as $pid) {
+                        $p = wc_get_product((int) $pid);
+                        if (! $p instanceof \WC_Product) {
+                            continue;
+                        }
+                        $attrs = [];
+                        foreach ($p->get_attributes() as $a) {
+                            if (! $a instanceof \WC_Product_Attribute) {
+                                continue;
+                            }
+                            $parts = [];
+                            foreach ($a->get_options() as $v) {
+                                if ($a->is_taxonomy()) {
+                                    $t = get_term((int) $v, $a->get_name());
+                                    if ($t instanceof \WP_Term) {
+                                        $parts[] = $t->name;
+                                    }
+                                } else {
+                                    $parts[] = (string) $v;
+                                }
+                            }
+                            $attrs[] = [
+                                'name'    => $a->get_name(),
+                                'label'   => wc_attribute_label($a->get_name()),
+                                'options' => $parts,
+                            ];
+                        }
+                        $inspect[] = [
+                            'id'         => $p->get_id(),
+                            'title'      => $p->get_name(),
+                            'factory'    => (string) get_post_meta($p->get_id(), Meta::FACTORY_META, true),
+                            'attributes' => $attrs,
+                        ];
+                    }
+                    $out['family_sample'] = $inspect;
+                }
+
+                $inspect_families = ['rebar', 'beam-h', 'profile', 'angel'];
+                if (in_array($out['family'], $inspect_families, true)) {
+                    $q = new \WP_Query([
+                        'post_type'      => 'product',
+                        'post_status'    => 'publish',
+                        'posts_per_page' => 3,
+                        'fields'         => 'ids',
+                        'no_found_rows'  => true,
+                        'tax_query'      => [
+                            [
+                                'taxonomy'         => 'product_cat',
+                                'field'            => 'term_id',
+                                'terms'            => [$term->term_id],
+                                'include_children' => true,
+                            ],
+                        ],
+                    ]);
+                    $sample = [];
+                    foreach ($q->posts as $pid) {
+                        $p = wc_get_product((int) $pid);
+                        if (! $p instanceof \WC_Product) {
+                            continue;
+                        }
+                        $attrs = [];
+                        foreach ($p->get_attributes() as $a) {
+                            if (! $a instanceof \WC_Product_Attribute) {
+                                continue;
+                            }
+                            $parts = [];
+                            foreach ($a->get_options() as $v) {
+                                if ($a->is_taxonomy()) {
+                                    $t = get_term((int) $v, $a->get_name());
+                                    if ($t instanceof \WP_Term) {
+                                        $parts[] = $t->name;
+                                    }
+                                } else {
+                                    $parts[] = (string) $v;
+                                }
+                            }
+                            $attrs[] = [
+                                'name'    => $a->get_name(),
+                                'label'   => wc_attribute_label($a->get_name()),
+                                'options' => $parts,
+                            ];
+                        }
+                        $sample[] = [
+                            'id'         => $p->get_id(),
+                            'title'      => $p->get_name(),
+                            'factory'    => (string) get_post_meta($p->get_id(), Meta::FACTORY_META, true),
+                            'attributes' => $attrs,
+                        ];
+                    }
+                    $out['family_sample'] = $sample;
                 }
             } else {
                 $like = get_terms([
@@ -413,7 +505,7 @@ final class FilteredTable
             }
         } else {
             $tables[] = [
-                'title' => $term->name . ' - ' . $this->value_label($family, $value),
+                'title' => $term->name . ' - ' . $this->value_label($family, $value, (string) ($ctx['raw'] ?? '')),
                 'ids'   => $ids,
                 'kind'  => $family,
             ];
@@ -424,7 +516,7 @@ final class FilteredTable
         echo '<h3 class="navard-sc-title">' . esc_html($term->name) . '</h3>';
 
         foreach ($tables as $t) {
-            echo $this->render_table_block($t['title'], $t['ids'], $t['kind']);
+            echo $this->render_table_block($t['title'], $t['ids'], $t['kind'], $value);
         }
 
         echo '</div>';
@@ -435,21 +527,27 @@ final class FilteredTable
         return (string) ob_get_clean();
     }
 
-    private function value_label(string $family, string $value): string
+    private function value_label(string $family, string $value, string $raw = ''): string
     {
+        $show = ('' !== $raw) ? $raw : $value;
+
+        if (str_starts_with(strtolower($show), 'size-')) {
+            $show = substr($show, 5);
+        }
+
         switch ($family) {
             case 'rebar':
             case 'beam-h':
-                return 'سایز ' . $value;
+                return 'سایز ' . $show;
             case 'angel':
-                return 'ضخامت ' . $value;
+                return 'ضخامت ' . $show;
             case 'profile':
-                return 'ابعاد ' . $value;
+                return 'ابعاد ' . $show;
         }
-        return $value;
+        return $show;
     }
 
-    private function render_table_block(string $title, array $ids, string $kind): string
+    private function render_table_block(string $title, array $ids, string $kind, string $size_value = '', bool $dedupe_factory = true): string
     {
         $products  = [];
         $seen_fact = [];
@@ -459,24 +557,25 @@ final class FilteredTable
                 continue;
             }
 
-            $factory = trim((string) get_post_meta($p->get_id(), Meta::FACTORY_META, true));
+            if ($dedupe_factory) {
+                $factory = trim((string) get_post_meta($p->get_id(), Meta::FACTORY_META, true));
 
-            // uchannel titles carry the factory at the end, but _navard_factory
-            // may not be set. Fall back to the last segment of the title.
-            if ('' === $factory && 'uchannel' === $kind) {
-                $factory = $this->factory_from_title($p->get_name());
+                if ('' === $factory && 'uchannel' === $kind) {
+                    $factory = $this->factory_from_title($p->get_name());
+                }
+
+                if ('' === $factory) {
+                    continue;
+                }
+
+                $key = mb_strtolower($factory);
+                if (isset($seen_fact[$key])) {
+                    continue;
+                }
+                $seen_fact[$key] = true;
             }
 
-            if ('' === $factory) {
-                continue;
-            }
-
-            $key = mb_strtolower($factory);
-            if (isset($seen_fact[$key])) {
-                continue;
-            }
-            $seen_fact[$key] = true;
-            $products[]      = $p;
+            $products[] = $p;
         }
         if (empty($products)) {
             return '';
@@ -509,7 +608,7 @@ final class FilteredTable
         echo '</tr></thead><tbody>';
 
         foreach ($products as $p) {
-            $row = $this->build_row_with_fallback($p, $kind, $columns);
+            $row = $this->build_row_with_fallback($p, $kind, $columns, $size_value);
             echo '<tr>';
             foreach ($columns as $col) {
                 $val = isset($row[$col]) ? (string) $row[$col] : '';
@@ -527,12 +626,6 @@ final class FilteredTable
         return (string) ob_get_clean();
     }
 
-    /**
-     * Extract the factory/brand from a uchannel title.
-     * Title pattern: "ناودانی سبک – ناودانی سبک عرض 18 – 18 – ذوب آهن اصفهان"
-     *                                                  ^^^^^^^^^^^^^^
-     * Split on en/em dash or hyphen, take the last non-empty segment.
-     */
     private function factory_from_title(string $title): string
     {
         $t = html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -547,16 +640,20 @@ final class FilteredTable
             return '';
         }
 
+        while (! empty($parts) && preg_match('/^\d+$/', (string) end($parts))) {
+            array_pop($parts);
+        }
+
+        if (empty($parts)) {
+            return '';
+        }
+
         return (string) end($parts);
     }
 
-    /**
-     * Same as build_row() but ensures the "کارخانه" / "برند" column also
-     * uses the title fallback when _navard_factory is empty.
-     */
-    private function build_row_with_fallback(\WC_Product $p, string $kind, array $columns): array
+    private function build_row_with_fallback(\WC_Product $p, string $kind, array $columns, string $size_value = ''): array
     {
-        $row = $this->build_row($p, $kind, $columns);
+        $row = $this->build_row($p, $kind, $columns, $size_value);
 
         if ('uchannel' === $kind) {
             if ('' === ($row['کارخانه'] ?? '')) {
@@ -571,19 +668,63 @@ final class FilteredTable
     {
         switch ($kind) {
             case 'rebar':
+                return [
+                    'سایز (mm)',
+                    'استاندارد',
+                    'محل تحویل',
+                    'کارخانه',
+                    'قیمت (تومان)',
+                    'نوسان قیمت',
+                ];
+
             case 'beam-h':
-                return ['سایز', 'کارخانه', 'قیمت (تومان)', 'نوسان قیمت'];
+                return [
+                    'سایز (cm)',
+                    'کارخانه',
+                    'محل تحویل',
+                    'واحد',
+                    'وزن تئوری (kg)',
+                    'قیمت (تومان)',
+                    'نوسان قیمت',
+                ];
+
             case 'profile':
-                return ['ابعاد', 'کارخانه', 'قیمت (تومان)', 'نوسان قیمت'];
+                return [
+                    'عنوان کالا',
+                    'کارخانه',
+                    'ضخامت (mm)',
+                    'ابعاد (mm)',
+                    'محل تحویل',
+                    'قیمت (تومان)',
+                ];
+
             case 'angel':
-                return ['سایز (mm)', 'برند', 'قیمت (تومان)', 'نوسان قیمت'];
+                return [
+                    'سایز (mm)',
+                    'ضخامت (mm)',
+                    'برند',
+                    'محل تحویل',
+                    'وزن واحد (Kg)',
+                    'قیمت (تومان)',
+                    'نوسان قیمت',
+                ];
+
             case 'uchannel':
-                return ['نام کالا', 'کارخانه', 'قیمت (تومان)', 'نوسان قیمت'];
+                return [
+                    'سایز (cm)',
+                    'طول (m)',
+                    'کارخانه',
+                    'محل تحویل',
+                    'واحد',
+                    'قیمت (تومان)',
+                    'نوسان قیمت',
+                ];
         }
+
         return ['قیمت (تومان)'];
     }
 
-    private function build_row(\WC_Product $p, string $kind, array $columns): array
+    private function build_row(\WC_Product $p, string $kind, array $columns, string $size_value = ''): array
     {
         $id      = $p->get_id();
         $row     = [];
@@ -597,32 +738,67 @@ final class FilteredTable
 
         switch ($kind) {
             case 'rebar':
-                $row['سایز']         = $this->matched_attr_value($p, 'سایز mm');
+                $row['سایز (mm)']    = $this->first_attr($p, ['سایز mm', 'سایز (mm)', 'سایز']);
+                $row['استاندارد']    = $this->first_attr($p, ['استاندارد', 'استاندارد (mm)']);
+                $row['محل تحویل']    = $this->first_attr($p, ['محل تحویل']);
                 $row['کارخانه']      = $factory;
                 $row['قیمت (تومان)'] = $price;
                 $row['نوسان قیمت']   = $change;
                 break;
+
             case 'beam-h':
-                $row['سایز']         = $this->matched_attr_value($p, 'سایز cm');
-                $row['کارخانه']      = $factory;
-                $row['قیمت (تومان)'] = $price;
-                $row['نوسان قیمت']   = $change;
+                $row['سایز (cm)']      = $this->first_attr($p, ['سایز cm', 'سایز (cm)', 'سایز']);
+                $row['کارخانه']        = $factory;
+                $row['محل تحویل']      = $this->first_attr($p, ['محل تحویل']);
+                $row['واحد']           = $this->matched_unit_value($p);
+                $row['وزن تئوری (kg)'] = $this->first_attr($p, [
+                    'وزن تئوری kg',
+                    'وزن تئوری (kg)',
+                    'وزن تئوری',
+                    'وزن تئوري',
+                    'وزن (kg)',
+                    'وزن',
+                ]);
+                $row['قیمت (تومان)']   = $price;
+                $row['نوسان قیمت']     = $change;
                 break;
+
             case 'profile':
-                $row['ابعاد']        = $this->matched_attr_value($p, 'ابعاد mm');
+                $row['عنوان کالا']   = $p->get_name();
                 $row['کارخانه']      = $factory;
+                $row['ضخامت (mm)']   = $this->first_attr($p, ['ضخامت mm', 'ضخامت (mm)', 'ضخامت']);
+                $row['ابعاد (mm)']   = $this->first_attr($p, ['ابعاد mm', 'ابعاد (mm)', 'ابعاد']);
+                $row['محل تحویل']    = $this->first_attr($p, ['محل تحویل']);
                 $row['قیمت (تومان)'] = $price;
-                $row['نوسان قیمت']   = $change;
                 break;
+
             case 'angel':
-                $row['سایز (mm)']    = $this->matched_attr_value($p, 'ضخامت mm');
-                $row['برند']         = $factory;
-                $row['قیمت (تومان)'] = $price;
-                $row['نوسان قیمت']   = $change;
+                $row['سایز (mm)']     = $this->first_attr($p, ['سایز mm', 'سایز (mm)', 'سایز']);
+                $row['ضخامت (mm)']    = $this->first_attr($p, ['ضخامت mm', 'ضخامت (mm)', 'ضخامت']);
+                $row['برند']          = $factory;
+                $row['محل تحویل']     = $this->first_attr($p, ['محل تحویل']);
+                $row['وزن واحد (Kg)'] = $this->first_attr($p, [
+                    'وزن واحد kg',
+                    'وزن واحد (kg)',
+                    'وزن واحد',
+                    'وزن kg',
+                    'وزن (kg)',
+                    'وزن تئوری kg',
+                    'وزن تئوری (kg)',
+                    'وزن تئوری',
+                    'وزن تئوري',
+                    'وزن',
+                ]);
+                $row['قیمت (تومان)']  = $price;
+                $row['نوسان قیمت']    = $change;
                 break;
+
             case 'uchannel':
-                $row['نام کالا']     = $p->get_name();
+                $row['سایز (cm)']    = $size_value;
+                $row['طول (m)']      = $this->first_attr($p, ['طول m', 'طول (m)', 'طول']);
                 $row['کارخانه']      = $factory;
+                $row['محل تحویل']    = $this->first_attr($p, ['محل تحویل']);
+                $row['واحد']         = $this->matched_unit_value($p);
                 $row['قیمت (تومان)'] = $price;
                 $row['نوسان قیمت']   = $change;
                 break;
@@ -653,6 +829,40 @@ final class FilteredTable
                 }
             }
             return implode('، ', $parts);
+        }
+        return '';
+    }
+
+    private function matched_named_attr(\WC_Product $p, string $attr_label): string
+    {
+        return $this->matched_attr_value($p, $attr_label);
+    }
+
+    /**
+     * Try several label variants in order; return the first non-empty value.
+     *
+     * @param string[] $labels
+     */
+    private function first_attr(\WC_Product $p, array $labels): string
+    {
+        foreach ($labels as $label) {
+            $val = $this->matched_attr_value($p, $label);
+            if ('' !== $val) {
+                return $val;
+            }
+        }
+        return '';
+    }
+
+    private function matched_unit_value(\WC_Product $p): string
+    {
+        $labels = ['واحد', 'واحد kg', 'واحد برگ', 'واحد رول', 'واحد عدد'];
+
+        foreach ($labels as $label) {
+            $val = $this->matched_attr_value($p, $label);
+            if ('' !== $val) {
+                return $val;
+            }
         }
         return '';
     }
@@ -702,5 +912,29 @@ final class FilteredTable
         echo $html; // phpcs:ignore WordPress.Security.EscapeOutput
         do_action('woocommerce_after_main_content');
         get_footer();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Public helpers used by TagFilteredTable                             */
+    /* ------------------------------------------------------------------ */
+
+    /** Public wrapper so TagFilteredTable can render a family-style table. */
+    public function render_family_table(string $family, \WP_Term $term, string $title, array $product_ids, bool $dedupe_factory = true): string
+    {
+        $html = '<div class="navard-shortcode" dir="rtl">';
+        $html .= '<h3 class="navard-sc-title">' . esc_html($term->name) . '</h3>';
+        $html .= $this->render_table_block($title, $product_ids, $family, '', $dedupe_factory);
+        $html .= '</div>';
+
+        CategoryTable::enqueue_assets_once();
+        add_action('wp_footer', [CategoryTable::class, 'print_modal'], 5);
+
+        return $html;
+    }
+
+    /** Public wrapper for the archive page output. */
+    public function output_archive_public(\WP_Term $term, string $html): void
+    {
+        $this->output_archive(['term' => $term], $html);
     }
 }
