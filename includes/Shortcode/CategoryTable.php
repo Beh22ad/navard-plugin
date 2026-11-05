@@ -12,6 +12,7 @@ final class CategoryTable
 {
 
     private static bool $modal_printed = false;
+    private static bool $assets_done   = false;
 
     public function hooks(): void
     {
@@ -51,13 +52,19 @@ final class CategoryTable
         ]);
     }
 
-    /**
-     * Print the chart modal once, in wp_footer, outside any tab panel.
-     */
     public function maybe_print_modal(): void
     {
         if (! self::$modal_printed) {
             return;
+        }
+        self::print_modal();
+    }
+
+    /** Public: used by FilteredTable. */
+    public static function print_modal(): void
+    {
+        if (self::$assets_done) {
+            // still print if called only once
         }
 ?>
         <div id="navard-chart-modal" class="navard-chart-modal" aria-hidden="true">
@@ -71,6 +78,34 @@ final class CategoryTable
             </div>
         </div>
 <?php
+        self::$modal_printed = true;
+    }
+
+    /** Public: used by FilteredTable to enqueue the style/script once. */
+    public static function enqueue_assets_once(): void
+    {
+        if (self::$assets_done) {
+            return;
+        }
+        self::$assets_done = true;
+        wp_enqueue_style('navard-shortcode');
+        wp_enqueue_script('navard-chart');
+        self::$modal_printed = true;
+    }
+
+    /** Public: chart icon markup, used by FilteredTable. */
+    public static function chart_placeholder_public(int $product_id): string
+    {
+        return '<span class="navard-sc-chart" role="button" tabindex="0" aria-label="نمودار قیمت" data-product-id="' . $product_id . '">'
+            . '<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" focusable="false">'
+            . '<circle cx="16" cy="16" r="15" fill="#c62828"/>'
+            . '<rect x="8"  y="17" width="3" height="7"  fill="#fff"/>'
+            . '<rect x="12.5" y="13" width="3" height="11" fill="#fff"/>'
+            . '<rect x="17" y="10" width="3" height="14" fill="#fff"/>'
+            . '<rect x="21.5" y="15" width="3" height="9"  fill="#fff"/>'
+            . '<rect x="7" y="25" width="18" height="1.2" fill="#fff"/>'
+            . '</svg>'
+            . '</span>';
     }
 
     public function render($atts): string
@@ -96,7 +131,6 @@ final class CategoryTable
         $term     = null;
         $taxonomy = '';
 
-        // 1) Explicit IDs / slugs take precedence.
         if ($cat_id > 0) {
             $t = get_term($cat_id, 'product_cat');
             if ($t instanceof \WP_Term) {
@@ -123,7 +157,6 @@ final class CategoryTable
             }
         }
 
-        // 2) No explicit arg: auto-detect from the current archive page.
         if (! $term instanceof \WP_Term) {
             $detected = $this->detect_current_term();
             if ($detected) {
@@ -144,19 +177,16 @@ final class CategoryTable
         wp_enqueue_style('navard-shortcode');
         wp_enqueue_script('navard-chart');
         self::$modal_printed = true;
+        self::$assets_done   = true;
 
-        // Group products into tables BEFORE applying the limit.
-        // One group = one table (grouped by factory or tag meta).
         $groups = $this->group($products);
 
-        // `num` limits the number of TABLES (groups) shown, not the rows.
         $limited = false;
         if ($num > 0 && count($groups) > $num) {
             $groups  = array_slice($groups, 0, $num, true);
             $limited = true;
         }
 
-        // Build the URL to the full term archive for the "view full list" link.
         $view_all_url = '';
         if ($limited) {
             $link = get_term_link($term, $taxonomy);
@@ -205,7 +235,7 @@ final class CategoryTable
                     $cls = ('قیمت (تومان)' === $col) ? ' class="navard-sc-td-price"' : '';
                     echo '<td' . $cls . '>' . esc_html($val) . '</td>';
                 }
-                echo '<td class="navard-sc-td-chart">' . $this->chart_placeholder($pid) . '</td>';
+                echo '<td class="navard-sc-td-chart">' . self::chart_placeholder_public($pid) . '</td>';
                 echo '</tr>';
             }
 
@@ -214,7 +244,6 @@ final class CategoryTable
             echo '</div>';
         }
 
-        // "View full list" link when the tables were limited by `num`.
         if ('' !== $view_all_url) {
             echo '<div class="navard-sc-viewall">';
             echo '<a class="navard-sc-viewall-link" href="' . esc_url($view_all_url) . '">'
@@ -228,43 +257,18 @@ final class CategoryTable
         return (string) ob_get_clean();
     }
 
-    /**
-     * Detect the current product_cat or product_tag term from the main query.
-     *
-     * @return array{term:\WP_Term,taxonomy:string}|null
-     */
     private function detect_current_term(): ?array
     {
         if (! function_exists('is_tax') && ! function_exists('is_category') && ! function_exists('is_tag')) {
             return null;
         }
-
         $obj = get_queried_object();
-
         if ($obj instanceof \WP_Term && in_array($obj->taxonomy, ['product_cat', 'product_tag'], true)) {
             return ['term' => $obj, 'taxonomy' => $obj->taxonomy];
         }
-
         return null;
     }
 
-    private function chart_placeholder(int $product_id): string
-    {
-        return '<span class="navard-sc-chart" role="button" tabindex="0" aria-label="نمودار قیمت" data-product-id="' . $product_id . '">'
-            . '<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" focusable="false">'
-            . '<circle cx="16" cy="16" r="15" fill="#c62828"/>'
-            . '<rect x="8"  y="17" width="3" height="7"  fill="#fff"/>'
-            . '<rect x="12.5" y="13" width="3" height="11" fill="#fff"/>'
-            . '<rect x="17" y="10" width="3" height="14" fill="#fff"/>'
-            . '<rect x="21.5" y="15" width="3" height="9"  fill="#fff"/>'
-            . '<rect x="7" y="25" width="18" height="1.2" fill="#fff"/>'
-            . '</svg>'
-            . '</span>';
-    }
-
-    /**
-     * @return array<int,\WC_Product>
-     */
     private function query(int $term_id, string $taxonomy): array
     {
         $q = new \WP_Query([
@@ -291,10 +295,6 @@ final class CategoryTable
         return $out;
     }
 
-    /**
-     * @param array<int,\WC_Product> $products
-     * @return array<string,array{last_update:string,rows:array<int,array<string,string>>,order:array<int,string>}>
-     */
     private function group(array $products): array
     {
         $groups = [];
@@ -332,9 +332,6 @@ final class CategoryTable
         return $groups;
     }
 
-    /**
-     * @return array<string,string>
-     */
     private function row(\WC_Product $product): array
     {
         $row = [];
@@ -386,10 +383,6 @@ final class CategoryTable
         return $row;
     }
 
-    /**
-     * @param array{last_update:string,rows:array<int,array<string,string>>,order:array<int,string>} $group
-     * @return array<int,string>
-     */
     private function columns(array $group): array
     {
         $order = $group['order'];

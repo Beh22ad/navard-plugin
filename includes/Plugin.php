@@ -16,6 +16,7 @@ use Navard\Cron\Scheduler;
 use Navard\Product\Frontend;
 use Navard\Shortcode\Archive;
 use Navard\Shortcode\CategoryTable;
+use Navard\Shortcode\FilteredTable;
 use Navard\Shortcode\Search;
 
 if (! defined('ABSPATH')) {
@@ -52,6 +53,7 @@ final class Plugin
         (new Endpoint())->hooks();
         (new Frontend())->hooks();
         (new CategoryTable())->hooks();
+        (new FilteredTable())->hooks();
         (new Archive())->hooks();
         (new Search())->hooks();
 
