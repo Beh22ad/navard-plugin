@@ -47,6 +47,10 @@ final class TagFilteredTable
 
     public function hooks(): void
     {
+        if (\Navard\Support\Helpers::is_navard_theme()) {
+            return;
+        }
+
         add_action('wp_loaded', [$this, 'on_wp_loaded'], 0);
         add_action('template_redirect', [$this, 'on_template_redirect'], 0);
         add_filter('template_include', [$this, 'on_template_include'], 999);
@@ -59,8 +63,10 @@ final class TagFilteredTable
 
     public function on_wp_loaded(): void
     {
-        $this->debug_log('wp_loaded');
         if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
+            return;
+        }
+        if ('no' === (string) \Navard\Config::get('enable_tag_pages', 'yes')) {
             return;
         }
         $ctx = $this->parse_request();
@@ -72,7 +78,6 @@ final class TagFilteredTable
             return;
         }
         $this->pending_ctx = $ctx + ['ids' => $ids];
-        $this->debug_log('wp_loaded: cached ctx (' . count($ids) . ' ids)');
     }
 
     public function on_template_redirect(): void

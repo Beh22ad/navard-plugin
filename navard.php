@@ -3,7 +3,7 @@
 /**
  * Plugin Name: نورد
  * Description: درون‌ریزی و بروزرسانی خودکار قیمت محصولات فولادی از API
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Navard
  * Text Domain: navard
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('NAVARD_VERSION', '1.1.0');
+define('NAVARD_VERSION', '1.2.0');
 define('NAVARD_FILE', __FILE__);
 define('NAVARD_DIR', plugin_dir_path(__FILE__));
 define('NAVARD_URL', plugin_dir_url(__FILE__));

@@ -60,12 +60,8 @@ final class CategoryTable
         self::print_modal();
     }
 
-    /** Public: used by FilteredTable. */
     public static function print_modal(): void
     {
-        if (self::$assets_done) {
-            // still print if called only once
-        }
 ?>
         <div id="navard-chart-modal" class="navard-chart-modal" aria-hidden="true">
             <div class="navard-chart-modal-backdrop" data-navard-close="1"></div>
@@ -81,7 +77,6 @@ final class CategoryTable
         self::$modal_printed = true;
     }
 
-    /** Public: used by FilteredTable to enqueue the style/script once. */
     public static function enqueue_assets_once(): void
     {
         if (self::$assets_done) {
@@ -93,7 +88,6 @@ final class CategoryTable
         self::$modal_printed = true;
     }
 
-    /** Public: chart icon markup, used by FilteredTable. */
     public static function chart_placeholder_public(int $product_id): string
     {
         return '<span class="navard-sc-chart" role="button" tabindex="0" aria-label="نمودار قیمت" data-product-id="' . $product_id . '">'
@@ -128,6 +122,26 @@ final class CategoryTable
         $tag_id = (int) $atts['tag_id'];
         $num    = (int) $atts['num'];
 
+        // -----------------------------------------------------------------
+        // 1) Auto-detect size-… / tg-… URLs first
+        // -----------------------------------------------------------------
+        if ('' === $cat && '' === $tag && $cat_id <= 0 && $tag_id <= 0) {
+            $auto = $this->detect_filtered_request();
+            if (null !== $auto) {
+                return $auto;
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // 2) Without explicit target → render NOTHING (theme archive is used)
+        // -----------------------------------------------------------------
+        if ('' === $cat && '' === $tag && $cat_id <= 0 && $tag_id <= 0) {
+            return '';
+        }
+
+        // -----------------------------------------------------------------
+        // 3) Resolve the term from explicit args
+        // -----------------------------------------------------------------
         $term     = null;
         $taxonomy = '';
 
@@ -157,18 +171,13 @@ final class CategoryTable
             }
         }
 
-        if (! $term instanceof \WP_Term) {
-            $detected = $this->detect_current_term();
-            if ($detected) {
-                $term     = $detected['term'];
-                $taxonomy = $detected['taxonomy'];
-            }
-        }
-
         if (! $term instanceof \WP_Term || '' === $taxonomy) {
             return '';
         }
 
+        // -----------------------------------------------------------------
+        // 4) Query products and render as tables
+        // -----------------------------------------------------------------
         $products = $this->query((int) $term->term_id, $taxonomy);
         if (empty($products)) {
             return '';
@@ -257,11 +266,63 @@ final class CategoryTable
         return (string) ob_get_clean();
     }
 
-    private function detect_current_term(): ?array
+    /* ------------------------------------------------------------------ */
+    /* Auto-detection of /…/size-N/ and /…/tg-<value>/ URLs                 */
+    /* ------------------------------------------------------------------ */
+
+    private function detect_filtered_request(): ?string
     {
-        if (! function_exists('is_tax') && ! function_exists('is_category') && ! function_exists('is_tag')) {
+        if (
+            'no' === (string) \Navard\Config::get('enable_size_pages', 'yes')
+            && 'no' === (string) \Navard\Config::get('enable_tag_pages', 'yes')
+        ) {
             return null;
         }
+
+        $req  = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = trim((string) wp_parse_url($req, PHP_URL_PATH), '/');
+        if ('' === $path) {
+            return null;
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), static fn($s) => '' !== $s));
+        if (count($segments) < 3 || 'product-category' !== $segments[0]) {
+            return null;
+        }
+
+        $last = strtolower((string) end($segments));
+
+        if (str_starts_with($last, 'tg-') || str_starts_with($last, 'tag-')) {
+            if ('no' === (string) \Navard\Config::get('enable_tag_pages', 'yes')) {
+                return null;
+            }
+            $tagger = new TagFilteredTable();
+            if (method_exists($tagger, 'render_shortcode_if_match')) {
+                return (string) $tagger->render_shortcode_if_match();
+            }
+            return null;
+        }
+
+        if (str_starts_with($last, 'size-')) {
+            if ('no' === (string) \Navard\Config::get('enable_size_pages', 'yes')) {
+                return null;
+            }
+            $filter = new FilteredTable();
+            if (method_exists($filter, 'render_shortcode_if_match')) {
+                return (string) $filter->render_shortcode_if_match();
+            }
+            return null;
+        }
+
+        return null;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Legacy helpers                                                      */
+    /* ------------------------------------------------------------------ */
+
+    private function detect_current_term(): ?array
+    {
         $obj = get_queried_object();
         if ($obj instanceof \WP_Term && in_array($obj->taxonomy, ['product_cat', 'product_tag'], true)) {
             return ['term' => $obj, 'taxonomy' => $obj->taxonomy];

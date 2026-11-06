@@ -67,6 +67,8 @@ final class Config
             'round_unit'          => '',
             'replace_cat_archive' => 'no',
             'hide_product_page'   => 'no',
+            'enable_size_pages'   => 'yes',
+            'enable_tag_pages'    => 'yes',
         ];
     }
 

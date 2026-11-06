@@ -3,6 +3,7 @@
 namespace Navard\Shortcode;
 
 use Navard\Config;
+use Navard\Support\Helpers;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -13,12 +14,17 @@ final class Archive
 
     public function hooks(): void
     {
-        add_filter('template_include', [$this, 'render_archive'], 9999);
+        if (! Helpers::is_navard_theme()) {
+            add_filter('template_include', [$this, 'render_archive'], 9999);
+        }
         add_action('template_redirect', [$this, 'maybe_redirect_product']);
     }
 
     private function replace_enabled(): bool
     {
+        if (Helpers::is_navard_theme()) {
+            return false;
+        }
         return 'yes' === (string) Config::get('replace_cat_archive', 'no');
     }
 
@@ -27,10 +33,6 @@ final class Archive
         return 'yes' === (string) Config::get('hide_product_page', 'no');
     }
 
-    /**
-     * Redirect single product URLs to their first product category when the
-     * "hide product page" option is on.
-     */
     public function maybe_redirect_product(): void
     {
         if (is_admin() || ! $this->hide_product_enabled()) {
@@ -44,7 +46,6 @@ final class Archive
         $cats = wp_get_post_terms($id, 'product_cat', ['fields' => 'ids']);
 
         if (! is_wp_error($cats) && ! empty($cats)) {
-            // Pick the deepest category (child if present).
             $deepest = 0;
             $depth   = -1;
             foreach ($cats as $cid) {
@@ -64,7 +65,6 @@ final class Archive
             }
         }
 
-        // Fallback: shop page.
         if (function_exists('wc_get_page_id')) {
             $shop = get_permalink(wc_get_page_id('shop'));
             if ($shop) {
@@ -137,7 +137,6 @@ final class Archive
         exit;
     }
 
-    /** Category link grid for the shop archive. */
     private function shop_html(): string
     {
         $parents = get_terms([

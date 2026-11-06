@@ -61,4 +61,28 @@ final class Helpers
         }
         return '_navard-' . $slug;
     }
+
+    /**
+     * Detect if the active theme is "Navard" (or a child of "Navard").
+     * Checks stylesheet slug, template slug, text domain, and display name.
+     */
+    public static function is_navard_theme(): bool
+    {
+        static $cache = null;
+        if (null !== $cache) {
+            return $cache;
+        }
+
+        $stylesheet = strtolower((string) get_option('stylesheet'));
+        $template   = strtolower((string) get_option('template'));
+        if ('navard' === $stylesheet || 'navard' === $template) {
+            return $cache = true;
+        }
+
+        $theme = wp_get_theme();
+        return $cache = (
+            'navard' === strtolower((string) $theme->get('TextDomain'))
+            || 'navard' === strtolower((string) $theme->get('Name'))
+        );
+    }
 }

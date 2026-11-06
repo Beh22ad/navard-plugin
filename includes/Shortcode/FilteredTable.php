@@ -52,6 +52,14 @@ final class FilteredTable
             return;
         }
 
+        if (\Navard\Support\Helpers::is_navard_theme()) {
+            return;
+        }
+
+        if ('no' === (string) \Navard\Config::get('enable_size_pages', 'yes')) {
+            return;
+        }
+
         /* ================= DEBUG: ?navard_debug=1 ================= */
         if (isset($_GET['navard_debug'])) {
             $this->debug_dump();
@@ -838,11 +846,6 @@ final class FilteredTable
         return $this->matched_attr_value($p, $attr_label);
     }
 
-    /**
-     * Try several label variants in order; return the first non-empty value.
-     *
-     * @param string[] $labels
-     */
     private function first_attr(\WC_Product $p, array $labels): string
     {
         foreach ($labels as $label) {
@@ -915,10 +918,13 @@ final class FilteredTable
     }
 
     /* ------------------------------------------------------------------ */
-    /* Public helpers used by TagFilteredTable                             */
+    /* Public helpers used by TagFilteredTable and CategoryTable           */
     /* ------------------------------------------------------------------ */
 
-    /** Public wrapper so TagFilteredTable can render a family-style table. */
+    /**
+     * Render a family table. Exposed so TagFilteredTable can reuse the layout
+     * without deduplicating by factory.
+     */
     public function render_family_table(string $family, \WP_Term $term, string $title, array $product_ids, bool $dedupe_factory = true): string
     {
         $html = '<div class="navard-shortcode" dir="rtl">';
@@ -930,6 +936,26 @@ final class FilteredTable
         add_action('wp_footer', [CategoryTable::class, 'print_modal'], 5);
 
         return $html;
+    }
+
+    /** Used by CategoryTable to render a filtered table when the URL matches. */
+    public function render_shortcode_if_match(): string
+    {
+        $ctx = $this->parse_request();
+        if (null === $ctx) {
+            return '';
+        }
+        $ids = $this->resolve_product_ids($ctx);
+        if (empty($ids)) {
+            return '';
+        }
+        return $this->render_family_table(
+            $ctx['family'],
+            $ctx['term'],
+            $ctx['term']->name . ' - ' . $ctx['value'],
+            $ids,
+            false
+        );
     }
 
     /** Public wrapper for the archive page output. */

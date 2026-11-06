@@ -120,6 +120,9 @@ final class Settings
         $s       = Config::all();
         $replace = ('yes' === (string) ($s['replace_cat_archive'] ?? 'no'));
         $hide    = ('yes' === (string) ($s['hide_product_page'] ?? 'no'));
+        $enable_size = ('yes' === (string) ($s['enable_size_pages'] ?? 'yes'));
+        $enable_tag  = ('yes' === (string) ($s['enable_tag_pages'] ?? 'yes'));
+        $is_navard = \Navard\Support\Helpers::is_navard_theme();
     ?>
         <div class="navard-op" dir="rtl">
             <h2>جدول محصولات</h2>
@@ -144,26 +147,67 @@ final class Settings
                 <h3>تنظیمات نمایش</h3>
                 <p class="description">در این بخش می‌توانید نحوه نمایش صفحات پیش‌فرض ووکامرس را تغییر دهید.</p>
 
-                <p class="description" style="color:#b32d2e;">
-                    ⚠ این گزینه‌ها برای تم نورد طراحی شده‌اند و ممکن است در تم‌های دیگر به درستی کار نکنند.
-                </p>
+                <?php if (! $is_navard) : ?>
+                    <p class="description" style="color:#b32d2e;">
+                        ⚠ این گزینه‌ها برای تم نورد طراحی شده‌اند و ممکن است در تم‌های دیگر به درستی کار نکنند.
+                    </p>
 
-                <p>
-                    <label>
-                        <input type="checkbox" name="replace_cat_archive" value="yes" <?php checked($replace); ?>>
-                        نمایش صفحه دسته‌بندی و تگ ووکامرس به صورت جدول محصولات
-                    </label>
-                </p>
+                    <p>
+                        <label>
+                            <input type="checkbox" name="enable_size_pages" value="yes" <?php checked($enable_size); ?>>
+                            فعال‌سازی صفحه دینامیک برای سایز محصولات
+                        </label>
+                    </p>
 
-                <p>
-                    <label>
-                        <input type="checkbox" name="hide_product_page" value="yes" <?php checked($hide); ?>>
-                        ریدایرکت صفحه محصول به صفحه دسته‌بندی
-                    </label>
-                </p>
+                    <p>
+                        <label>
+                            <input type="checkbox" name="enable_tag_pages" value="yes" <?php checked($enable_tag); ?>>
+                            فعال‌سازی صفحه دینامیک برای کارخانه‌ها
+                        </label>
+                    </p>
+
+                    <p>
+                        <label>
+                            <input type="checkbox" name="replace_cat_archive" value="yes" <?php checked($replace); ?>>
+                            نمایش صفحه دسته‌بندی و تگ ووکامرس به صورت جدول محصولات
+                        </label>
+                    </p>
+
+                    <p>
+                        <label>
+                            <input type="checkbox" name="hide_product_page" value="yes" <?php checked($hide); ?>>
+                            ریدایرکت صفحه محصول به صفحه دسته‌بندی
+                        </label>
+                    </p>
+                <?php else : ?>
+                    <p>
+                        <label>
+                            <input type="checkbox" name="hide_product_page" value="yes" <?php checked($hide); ?>>
+                            ریدایرکت صفحه محصول به صفحه دسته‌بندی
+                        </label>
+                    </p>
+                    <p style="color:#1a7f37; font-weight:600;">
+                        تنظیمات بیشتر در قیمت ویرایشگر پوسته قابل انجام است.
+                    </p>
+                <?php endif; ?>
 
                 <?php submit_button('ذخیره تنظیمات'); ?>
             </form>
+
+            <?php if (! $is_navard) : ?>
+                <hr>
+                <h3>نمونه لینک‌ها</h3>
+                <p class="description">
+                    نمایش محصولات بر حسب سایز:
+                    <br><code dir="ltr"><?php echo esc_html(home_url('/product-category/angel/size-5')); ?></code>
+                    <br>لیست نبشی های سایز 5
+                </p>
+                <p class="description">
+                    نمایش محصولات کتگوری بر حسب کارخانه سازنده:
+                    <br><code dir="ltr"><?php echo esc_html(home_url('/product-category/angel/tg-نبشی آریان فولاد')); ?></code>
+                    <br>لیست نبشی های کارخانه نبشی آریان فولاد
+                </p>
+            <?php endif; ?>
         </div>
 <?php
     }
@@ -194,6 +238,8 @@ final class Settings
             'round_unit'          => sanitize_text_field($in['round_unit'] ?? ''),
             'replace_cat_archive' => (string) ($prev['replace_cat_archive'] ?? 'no'),
             'hide_product_page'   => (string) ($prev['hide_product_page'] ?? 'no'),
+            'enable_size_pages'   => (string) ($prev['enable_size_pages'] ?? 'yes'),
+            'enable_tag_pages'    => (string) ($prev['enable_tag_pages'] ?? 'yes'),
         ];
 
         update_option(Config::OPTION_KEY, $data);
@@ -211,8 +257,16 @@ final class Settings
         $in   = wp_unslash($_POST);
         $data = Config::all();
 
-        $data['replace_cat_archive'] = (($in['replace_cat_archive'] ?? '') === 'yes') ? 'yes' : 'no';
-        $data['hide_product_page']   = (($in['hide_product_page'] ?? '') === 'yes') ? 'yes' : 'no';
+        $is_navard = \Navard\Support\Helpers::is_navard_theme();
+        // Only update enable_size_pages and enable_tag_pages if they are present in POST.
+        // In the Navard theme, these fields are not rendered, so we keep the previous defaults.
+        if (! $is_navard) {
+            $data['enable_size_pages']   = (($in['enable_size_pages'] ?? '') === 'yes') ? 'yes' : 'no';
+            $data['enable_tag_pages']    = (($in['enable_tag_pages'] ?? '') === 'yes')  ? 'yes' : 'no';
+            $data['replace_cat_archive'] = (($in['replace_cat_archive'] ?? '') === 'yes') ? 'yes' : 'no';
+        }
+
+        $data['hide_product_page'] = (($in['hide_product_page'] ?? '') === 'yes') ? 'yes' : 'no';
 
         update_option(Config::OPTION_KEY, $data);
         wp_safe_redirect(add_query_arg(['page' => Menu::SLUG, 'tab' => 'table', 'saved' => 1], admin_url('admin.php')));
