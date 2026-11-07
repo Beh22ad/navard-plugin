@@ -133,14 +133,7 @@ final class CategoryTable
         }
 
         // -----------------------------------------------------------------
-        // 2) Without explicit target → render NOTHING (theme archive is used)
-        // -----------------------------------------------------------------
-        if ('' === $cat && '' === $tag && $cat_id <= 0 && $tag_id <= 0) {
-            return '';
-        }
-
-        // -----------------------------------------------------------------
-        // 3) Resolve the term from explicit args
+        // 2) Resolve the term
         // -----------------------------------------------------------------
         $term     = null;
         $taxonomy = '';
@@ -171,12 +164,21 @@ final class CategoryTable
             }
         }
 
+        // Fallback to auto-detecting the current archive page
+        if (! $term instanceof \WP_Term) {
+            $detected = $this->detect_current_term();
+            if ($detected) {
+                $term     = $detected['term'];
+                $taxonomy = $detected['taxonomy'];
+            }
+        }
+
         if (! $term instanceof \WP_Term || '' === $taxonomy) {
             return '';
         }
 
         // -----------------------------------------------------------------
-        // 4) Query products and render as tables
+        // 3) Query products and render as tables
         // -----------------------------------------------------------------
         $products = $this->query((int) $term->term_id, $taxonomy);
         if (empty($products)) {
@@ -266,10 +268,6 @@ final class CategoryTable
         return (string) ob_get_clean();
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Auto-detection of /…/size-N/ and /…/tg-<value>/ URLs                 */
-    /* ------------------------------------------------------------------ */
-
     private function detect_filtered_request(): ?string
     {
         if (
@@ -316,10 +314,6 @@ final class CategoryTable
 
         return null;
     }
-
-    /* ------------------------------------------------------------------ */
-    /* Legacy helpers                                                      */
-    /* ------------------------------------------------------------------ */
 
     private function detect_current_term(): ?array
     {

@@ -47,10 +47,6 @@ final class TagFilteredTable
 
     public function hooks(): void
     {
-        if (\Navard\Support\Helpers::is_navard_theme()) {
-            return;
-        }
-
         add_action('wp_loaded', [$this, 'on_wp_loaded'], 0);
         add_action('template_redirect', [$this, 'on_template_redirect'], 0);
         add_filter('template_include', [$this, 'on_template_include'], 999);

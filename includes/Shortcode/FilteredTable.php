@@ -44,6 +44,63 @@ final class FilteredTable
     public function hooks(): void
     {
         add_action('template_redirect', [$this, 'maybe_render'], 0);
+
+        // Navard theme: turn /product-category/rebar/size-20 into a normal
+        // product_cat archive (no 404) so the theme template + [navard] run.
+        if (\Navard\Support\Helpers::is_navard_theme()) {
+            add_filter('request', [$this, 'rescue_size_request'], 1);
+            add_filter('redirect_canonical', [$this, 'block_size_canonical'], 10, 2);
+        }
+    }
+
+    /**
+     * Redirects/Modifies the WP request so /rebar/size-20 resolves to /rebar/
+     * (allowing the theme archive template to load, and [navard] to run).
+     */
+    public function rescue_size_request(array $qv): array
+    {
+        if (is_admin() || empty($qv['product_cat']) || ! is_string($qv['product_cat'])) {
+            return $qv;
+        }
+        if ('no' === (string) \Navard\Config::get('enable_size_pages', 'yes')) {
+            return $qv;
+        }
+
+        $segments = explode('/', trim($qv['product_cat'], '/'));
+        if (count($segments) < 2) {
+            return $qv;
+        }
+
+        $last = strtolower((string) array_pop($segments));
+        if (! preg_match('/^size-\d+(?:x\d+)?$/', $last)) {
+            return $qv;
+        }
+
+        // If a real category with this slug exists, leave it alone.
+        if (get_term_by('slug', $last, 'product_cat')) {
+            return $qv;
+        }
+
+        // The remaining path must be a real category (e.g. "rebar").
+        $parent_slug = end($segments);
+        if (! get_term_by('slug', $parent_slug, 'product_cat')) {
+            return $qv;
+        }
+
+        $qv['product_cat'] = implode('/', $segments);
+        return $qv;
+    }
+
+    /**
+     * Prevents WP from canonical redirecting /rebar/size-20 to /rebar/.
+     */
+    public function block_size_canonical($redirect, $requested)
+    {
+        $path = (string) wp_parse_url((string) $requested, PHP_URL_PATH);
+        if (preg_match('#/product-category/.+/size-\d+(?:x\d+)?/?$#i', $path)) {
+            return false; // don't redirect back to /rebar/
+        }
+        return $redirect;
     }
 
     public function maybe_render(): void
@@ -52,6 +109,8 @@ final class FilteredTable
             return;
         }
 
+        // In the Navard theme, the [navard] shortcode handles the size-…
+        // URLs via the archive template. Do not intercept them here.
         if (\Navard\Support\Helpers::is_navard_theme()) {
             return;
         }
@@ -74,7 +133,7 @@ final class FilteredTable
 
         $ids = $this->resolve_product_ids($ctx);
         if (empty($ids)) {
-            return; // let WP emit its normal 404
+            return;
         }
 
         $html = $this->render_html($ctx, $ids);
@@ -921,10 +980,6 @@ final class FilteredTable
     /* Public helpers used by TagFilteredTable and CategoryTable           */
     /* ------------------------------------------------------------------ */
 
-    /**
-     * Render a family table. Exposed so TagFilteredTable can reuse the layout
-     * without deduplicating by factory.
-     */
     public function render_family_table(string $family, \WP_Term $term, string $title, array $product_ids, bool $dedupe_factory = true): string
     {
         $html = '<div class="navard-shortcode" dir="rtl">';
@@ -938,7 +993,6 @@ final class FilteredTable
         return $html;
     }
 
-    /** Used by CategoryTable to render a filtered table when the URL matches. */
     public function render_shortcode_if_match(): string
     {
         $ctx = $this->parse_request();
@@ -958,7 +1012,6 @@ final class FilteredTable
         );
     }
 
-    /** Public wrapper for the archive page output. */
     public function output_archive_public(\WP_Term $term, string $html): void
     {
         $this->output_archive(['term' => $term], $html);
