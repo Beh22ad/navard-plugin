@@ -51,8 +51,10 @@ color: #c62828;
 
 /* Scroll Wrapper */
 .navard-sc-scroll {
-width: 100%;
-overflow-x: auto;
+	width: 100%;
+	overflow-x: auto;
+	overflow-wrap: normal;
+	word-break: normal;
 }
 
 /* Table Styling */

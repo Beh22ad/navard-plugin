@@ -19,6 +19,7 @@ use Navard\Shortcode\CategoryTable;
 use Navard\Shortcode\FilteredTable;
 use Navard\Shortcode\Search;
 use Navard\Shortcode\TagFilteredTable;
+use Navard\Shortcode\TaxToggle;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -55,6 +56,7 @@ final class Plugin
         (new CategoryTable())->hooks();
         (new FilteredTable())->hooks();
         (new TagFilteredTable())->hooks();
+        (new TaxToggle())->hooks();
         (new Archive())->hooks();
         (new Search())->hooks();
 

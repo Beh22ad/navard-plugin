@@ -81,7 +81,7 @@ final class FilteredTable
             return $qv;
         }
 
-        // The remaining path must be a real category (e.g. "rebar").
+        // The remaining path must be a real category (e.g., "rebar").
         $parent_slug = end($segments);
         if (! get_term_by('slug', $parent_slug, 'product_cat')) {
             return $qv;
@@ -383,8 +383,8 @@ final class FilteredTable
         return [
             'family' => $family,
             'term'   => $term,
-            'value'  => $parsed['attr_value'],
-            'raw'    => $parsed['raw'],
+            'value'  => $parsed['attr_value'], // "8040" (used for querying)
+            'raw'    => $parsed['raw'],        // "size-80x40" (used for display)
         ];
     }
 
@@ -398,12 +398,13 @@ final class FilteredTable
             return null;
         }
 
-        if (preg_match('/^\d+$/', $s)) {
-            return ['attr_value' => $s, 'raw' => $seg];
-        }
-
+        // Preserve the original 'x' for display, but strip it for the taxonomy match
         if (preg_match('/^(\d+)x(\d+)$/', $s, $m)) {
             return ['attr_value' => $m[1] . $m[2], 'raw' => $seg];
+        }
+
+        if (preg_match('/^\d+$/', $s)) {
+            return ['attr_value' => $s, 'raw' => $seg];
         }
 
         return null;
@@ -582,8 +583,15 @@ final class FilteredTable
         echo '<div class="navard-shortcode" dir="rtl">';
         echo '<h3 class="navard-sc-title">' . esc_html($term->name) . '</h3>';
 
+        // Extract the display value (e.g., "80x40") from the raw URL segment
+        $display_value = (string) ($ctx['raw'] ?? $value);
+        if (str_starts_with(strtolower($display_value), 'size-')) {
+            $display_value = substr($display_value, 5);
+        }
+
         foreach ($tables as $t) {
-            echo $this->render_table_block($t['title'], $t['ids'], $t['kind'], $value);
+            // Pass $display_value instead of $value so the "سایز (cm)" column shows "80x40"
+            echo $this->render_table_block($t['title'], $t['ids'], $t['kind'], $display_value);
         }
 
         echo '</div>';
@@ -861,6 +869,7 @@ final class FilteredTable
                 break;
 
             case 'uchannel':
+                // $size_value now correctly holds "80x40" instead of "8040"
                 $row['سایز (cm)']    = $size_value;
                 $row['طول (m)']      = $this->first_attr($p, ['طول m', 'طول (m)', 'طول']);
                 $row['کارخانه']      = $factory;
@@ -1006,7 +1015,7 @@ final class FilteredTable
         return $this->render_family_table(
             $ctx['family'],
             $ctx['term'],
-            $ctx['term']->name . ' - ' . $ctx['value'],
+            $ctx['term']->name . ' (' .   str_replace("size-", "", $ctx['raw']) . ")",
             $ids,
             false
         );
