@@ -217,12 +217,12 @@ final class CategoryTable
             echo '<h4 class="navard-sc-group-title">' . ('' !== $label ? esc_html($label) : '&nbsp;') . '</h4>';
 
             if ('' !== $group['last_update']) {
-                echo '<span class="navard-sc-updated">'
+                echo '<div class="navard-date-parent"><span class="navard-sc-updated">'
                     . '<svg class="navard-sc-cal" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
                     . '<path fill="currentColor" d="M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm12 8v9H5v-9h14zM5 8V6h14v2H5z"/>'
                     . '</svg>'
                     . 'آخرین بروزرسانی: ' . esc_html($group['last_update'])
-                    . '</span>';
+                    . '</span></div>';
             }
             echo '</div>';
 

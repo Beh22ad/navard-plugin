@@ -1,52 +1,68 @@
+/* =========================================================
+   Navard plugin — shortcode styles
+   =========================================================
+   Works standalone (with or without the Navard theme). When the theme
+   is active, its palette.css defines the tokens; when not, the :root
+   block below provides a matching default. Override any variable from
+   Customizer or your theme's theme-options to re-skin in one place.
+   ========================================================= */
+
+:root {
+	--navard-primary:       #c62828;
+	--navard-primary-dark:  #8e1c1c;
+	--navard-primary-ring:  rgba(198, 40, 40, 0.15);
+	--navard-text:          #4f5b66;
+	--navard-dark:          #111827;
+	--navard-muted:         #757575;
+	--navard-border:        #e2e8f0;
+	--navard-background:    #ffffff;
+	--navard-surface:       #ffffff;
+	--navard-header-bg:     #e8ecef;
+	--navard-row-alt:       #f1f5f8;
+}
+
 /* Container Card */
 .navard-sc-group {
-direction: rtl;
-background-color: #ffffff;
-border: 1px solid #e2e8f0;
-border-radius: 16px;
-padding: 20px 24px;
-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-box-sizing: border-box;
-width: 100%;
-    margin-bottom: 40px;
+	direction: rtl;
+	background-color: var(--navard-surface);
+	border: 1px solid var(--navard-border);
+	border-radius: 16px;
+	padding: 20px 24px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+	width: 100%;
+	margin-bottom: 40px;
 }
 
 /* Header Section */
 .navard-sc-group-head {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 16px;
-gap: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+	gap: 16px;
 }
 
 .navard-sc-group-title {
-margin: 0;
-font-size: 1.15rem;
-font-weight: 700;
-color: #c62828;
-white-space: nowrap;
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--navard-primary);
+	white-space: normal;
 }
 
 .navard-sc-updated {
-display: flex;
-align-items: center;
-gap: 6px;
-font-size: 0.825rem;
-color: #757575;
-white-space: nowrap;
-}
-
-.navard-sc-updated::after {
-content: "";
-flex-grow: 1;
-height: 1px;
-background-color: #e0e0e0;
-margin-right: 12px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.825rem;
+	color: var(--navard-muted);
+	white-space: normal;
+	justify-content: flex-end;
 }
 
 .navard-sc-cal {
-color: #c62828;
+	color: var(--navard-primary);
 }
 
 /* Scroll Wrapper */
@@ -59,239 +75,247 @@ color: #c62828;
 
 /* Table Styling */
 .navard-sc-table {
-width: 100%;
-border-collapse: collapse;
-text-align: center;
+	width: 100%;
+	border-collapse: collapse;
+	text-align: center;
 }
 
 /* Table Header */
 .navard-sc-table thead tr {
-background-color: #e8ecef;
+	background-color: var(--navard-header-bg);
 }
 
 .navard-sc-table th {
-padding: 12px 16px;
-font-weight: 700;
-font-size: 0.875rem;
-color: #c62828;
-border: none;
+	padding: 12px 16px;
+	font-weight: 700;
+	font-size: 0.875rem;
+	color: var(--navard-primary);
+	border: none;
 }
 
 .navard-sc-table th:first-child {
-border-top-right-radius: 10px;
-border-bottom-right-radius: 10px;
+	border-top-right-radius: 10px;
+	border-bottom-right-radius: 10px;
 }
 
 .navard-sc-table th:last-child {
-border-top-left-radius: 10px;
-border-bottom-left-radius: 10px;
+	border-top-left-radius: 10px;
+	border-bottom-left-radius: 10px;
 }
 
 /* Zebra Striping (Alternating White and Light Gray) */
 .navard-sc-table tbody tr:nth-child(odd) {
-background-color: #ffffff;
+	background-color: var(--navard-surface);
 }
 
 .navard-sc-table tbody tr:nth-child(even) {
-background-color: #f1f5f8;
+	background-color: var(--navard-row-alt);
 }
 
 /* Table Cells */
 .navard-sc-table td {
-padding: 12px 16px;
-font-size: 0.9rem;
-color: #4f5b66;
-border: none;
-vertical-align: middle;
+	padding: 12px 16px;
+	font-size: 0.9rem;
+	color: var(--navard-text);
+	border: none;
+	vertical-align: middle;
 }
 
 /* Rounded Row Outer Edges */
 .navard-sc-table tbody tr td:first-child {
-border-top-right-radius: 10px;
-border-bottom-right-radius: 10px;
+	border-top-right-radius: 10px;
+	border-bottom-right-radius: 10px;
 }
 
 .navard-sc-table tbody tr td:last-child {
-border-top-left-radius: 10px;
-border-bottom-left-radius: 10px;
+	border-top-left-radius: 10px;
+	border-bottom-left-radius: 10px;
 }
 
 /* Price Cell */
 .navard-sc-td-price {
-font-weight: 800;
-color: #111827;
+	font-weight: 800;
+	color: var(--navard-dark);
 }
 
 /* Chart Icon Alignment */
 .navard-sc-td-chart {
-display: table-cell;
+	display: table-cell;
 }
 
 .navard-sc-chart {
-display: inline-flex;
-align-items: center;
-justify-content: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .navard-sc-chart svg circle {
-fill: #c62828;
+	fill: var(--navard-primary);
 }
 /* Shop page category grid */
 .navard-cat-grid {
-    direction: rtl;
+	direction: rtl;
 }
 
 .navard-cat-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 14px;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 14px;
 }
 
 .navard-cat-item {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 14px 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+	background: var(--navard-surface);
+	border: 1px solid var(--navard-border);
+	border-radius: 12px;
+	padding: 14px 16px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .navard-cat-link {
-    display: block;
-    font-weight: 700;
-    color: #c62828;
-    text-decoration: none;
-    margin-bottom: 6px;
+	display: block;
+	font-weight: 700;
+	color: var(--navard-primary);
+	text-decoration: none;
+	margin-bottom: 6px;
 }
 
 .navard-cat-link:hover {
-    text-decoration: underline;
+	text-decoration: underline;
 }
 
 .navard-cat-sublist {
-    list-style: none;
-    padding: 0;
-    margin: 6px 0 0 0;
-    border-top: 1px solid #eee;
-    padding-top: 6px;
+	list-style: none;
+	padding: 0;
+	margin: 6px 0 0 0;
+	border-top: 1px solid var(--navard-border);
+	padding-top: 6px;
 }
 
 .navard-cat-subitem {
-    font-size: 0.9em;
+	font-size: 0.9em;
 }
 
 .navard-cat-subitem .navard-cat-link {
-    font-weight: 500;
-    color: #4f5b66;
-    margin-bottom: 3px;
+	font-weight: 500;
+	color: var(--navard-text);
+	margin-bottom: 3px;
 }
 
 .navard-cat-subitem .navard-cat-link:hover {
-    color: #c62828;
+	color: var(--navard-primary);
 }
 /* Chart click area */
 .navard-sc-chart {
-    cursor: pointer;
+	cursor: pointer;
 }
 
 /* Modal */
 .navard-chart-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    direction: rtl;
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	direction: rtl;
 }
 
 .navard-chart-modal.is-open {
-    display: block;
+	display: block;
 }
 
 .navard-chart-modal-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
 }
 
 .navard-chart-modal-box {
-    position: relative;
-    max-width: 720px;
-    margin: 6vh auto 0;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-    overflow: hidden;
-    font-family: inherit;
+	position: relative;
+	max-width: 720px;
+	margin: 6vh auto 0;
+	background: var(--navard-surface);
+	border-radius: 14px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	font-family: inherit;
 }
 
 .navard-chart-modal-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid #eee;
-    background: #fafafa;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--navard-border);
+	background: var(--navard-row-alt);
 }
 
 .navard-chart-modal-title {
-    font-weight: 700;
-    color: #c62828;
+	font-weight: 700;
+	color: var(--navard-primary);
 }
 
 .navard-chart-modal-close {
-    border: none;
-    background: transparent;
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-    color: #666;
-    padding: 0 6px;
+	border: none;
+	background: transparent;
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+	color: var(--navard-muted);
+	padding: 0 6px;
 }
 
 .navard-chart-modal-close:hover {
-    color: #c62828;
+	color: var(--navard-primary);
 }
 
 .navard-chart-modal-body {
-    padding: 16px;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+	padding: 16px;
+	min-height: 200px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .navard-chart-modal-body svg {
-    width: 100%;
-    height: auto;
-    display: block;
+	width: 100%;
+	height: auto;
+	display: block;
 }
 
 .navard-chart-empty {
-    padding: 40px 16px;
-    text-align: center;
-    color: #888;
-    font-weight: 600;
+	padding: 40px 16px;
+	text-align: center;
+	color: var(--navard-muted);
+	font-weight: 600;
 }
 
 /* "View full list" link shown when shortcode uses num="1" or num="N" */
 .navard-sc-viewall {
-    margin-top: 16px;
-    text-align: center;
+	margin-top: 16px;
+	text-align: center;
 }
 
 .navard-sc-viewall-link {
 	display: inline-block;
 	padding: 8px 11px;
-	color: #c62828;
+	color: var(--navard-primary);
 	text-decoration: none;
-	border-bottom: 1px solid #c62828;
+	border-bottom: 1px solid var(--navard-primary);
 	transition: padding 0.25s ease;
 }
 
 .navard-sc-viewall-link:hover {
-	color: #c62828;
-	border-bottom: 1px solid #c62828;
+	color: var(--navard-primary);
+	border-bottom: 1px solid var(--navard-primary);
 	padding: 8px 20px;
+}
+@media (max-width: 600px) {
+	.navard-date-parent {
+		text-align: left;
+		svg {
+			display: none;
+		}
+	}
 }

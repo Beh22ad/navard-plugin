@@ -3,6 +3,7 @@
 namespace Navard\Shortcode;
 
 use Navard\Product\Meta;
+use Navard\Support\Helpers;
 use Navard\Support\PersianDate;
 
 if (! defined('ABSPATH')) {
@@ -51,6 +52,85 @@ final class TagFilteredTable
         add_action('template_redirect', [$this, 'on_template_redirect'], 0);
         add_filter('template_include', [$this, 'on_template_include'], 999);
         add_filter('redirect_canonical', [$this, 'block_canonical'], 10, 2);
+
+        // Navard theme: turn /product-category/rebar/tg-foo into a normal
+        // product_cat archive (no 404) so the theme template + [navard] run.
+        if (Helpers::is_navard_theme()) {
+            add_filter('request', [$this, 'rescue_tag_request'], 1);
+            add_filter('redirect_canonical', [$this, 'block_tag_canonical'], 10, 2);
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Navard theme request rescue                                         */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Rewrites /product-category/rebar/tg-<value>/ so WP resolves the
+     * `rebar` product_cat archive (is_404 = false) and the theme's
+     * taxonomy-product_cat template runs; [navard] then renders the
+     * filtered table via render_shortcode_if_match().
+     */
+    public function rescue_tag_request(array $qv): array
+    {
+        if (is_admin() || empty($qv['product_cat']) || ! is_string($qv['product_cat'])) {
+            return $qv;
+        }
+        if ('no' === (string) \Navard\Config::get('enable_tag_pages', 'yes')) {
+            return $qv;
+        }
+
+        $raw = rawurldecode($qv['product_cat']);
+        $segments = array_values(array_filter(explode('/', trim($raw, '/')), static fn($s) => '' !== $s));
+        if (count($segments) < 2) {
+            return $qv;
+        }
+
+        $last = (string) end($segments);
+
+        // Support both /rebar/tg-foo and /rebar/tg/foo forms.
+        if ('tg' === $last || 'tag' === $last) {
+            return $qv; // malformed, let WP handle it
+        }
+
+        if (0 === stripos($last, 'tg/') || 0 === stripos($last, 'tag/')) {
+            // handled by the "rebar/tg/foo" segment form below
+            return $qv;
+        }
+
+        if (! preg_match('/^(tg|tag)-/i', $last)) {
+            return $qv;
+        }
+
+        // If a real category with this slug exists, leave it alone.
+        if (get_term_by('slug', $last, 'product_cat')) {
+            return $qv;
+        }
+
+        // The remaining path must be a real category (e.g., "rebar").
+        array_pop($segments);
+        $parent_slug = (string) end($segments);
+        if ('' === $parent_slug) {
+            return $qv;
+        }
+        if (! get_term_by('slug', $parent_slug, 'product_cat')) {
+            return $qv;
+        }
+
+        $qv['product_cat'] = implode('/', $segments);
+        return $qv;
+    }
+
+    /**
+     * Prevents WP from canonical-redirecting /rebar/tg-… back to /rebar/.
+     */
+    public function block_tag_canonical($redirect, $requested)
+    {
+        $path = (string) wp_parse_url((string) $requested, PHP_URL_PATH);
+        if (preg_match('#/product-category/.+/(tg-|tag-)#iu', $path)) {
+            return false;
+        }
+        return $redirect;
     }
 
     /* ------------------------------------------------------------------ */
@@ -86,6 +166,13 @@ final class TagFilteredTable
             $this->debug_dump();
             exit;
         }
+
+        // Navard theme: the theme template renders [navard], which picks up
+        // the tg- URL via render_shortcode_if_match(). Do not render-and-exit.
+        if (Helpers::is_navard_theme()) {
+            return;
+        }
+
         if ($this->done || null === $this->pending_ctx) {
             return;
         }
@@ -101,6 +188,9 @@ final class TagFilteredTable
         if (isset($_GET['navard_tag_debug'])) {
             $this->debug_dump();
             exit;
+        }
+        if (Helpers::is_navard_theme()) {
+            return $template;
         }
         if ($this->done || null === $this->pending_ctx) {
             return $template;
@@ -119,7 +209,39 @@ final class TagFilteredTable
     }
 
     /* ------------------------------------------------------------------ */
-    /* Render                                                              */
+    /* Shortcode helper (used by CategoryTable::detect_filtered_request)  */
+    /* ------------------------------------------------------------------ */
+
+    public function render_shortcode_if_match(): string
+    {
+        if ('no' === (string) \Navard\Config::get('enable_tag_pages', 'yes')) {
+            return '';
+        }
+
+        $ctx = $this->parse_request();
+        if (null === $ctx) {
+            return '';
+        }
+
+        $ids = $this->resolve_product_ids($ctx);
+        if (empty($ids)) {
+            return '';
+        }
+
+        $renderer = new FilteredTable();
+        $title    = $ctx['term']->name . ' - ' . $ctx['value'];
+
+        return $renderer->render_family_table(
+            $ctx['family'],
+            $ctx['term'],
+            $title,
+            $ids,
+            false
+        );
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Render (non-Navard themes)                                          */
     /* ------------------------------------------------------------------ */
 
     private function render_and_exit(): void
@@ -145,7 +267,6 @@ final class TagFilteredTable
         $renderer = new FilteredTable();
         $title    = $ctx['term']->name . ' - ' . $ctx['value'];
 
-        // Render using the family layout, but pass FALSE for dedupe_factory.
         $html = $renderer->render_family_table($ctx['family'], $ctx['term'], $title, $ctx['ids'], false);
 
         status_header(200);
@@ -252,7 +373,7 @@ final class TagFilteredTable
 
     private function resolve_product_ids(array $ctx): array
     {
-        $cache_key = self::TRANSIENT_PREFIX . md5($ctx['family'] . '|' . $ctx['term']->term_id . '|' . $ctx['value']);
+        $cache_key = self::TRANSIENT_PREFIX . md5($ctx['family'] . '|' . $ctx['term']->term_id . '|' . $this->norm((string) $ctx['value']));
         $cached    = get_transient($cache_key);
 
         if (is_array($cached) && ! empty($cached)) {
@@ -323,6 +444,7 @@ final class TagFilteredTable
         $s = PersianDate::to_ascii_digits($s);
         $s = str_replace(['ي', 'ك'], ['ی', 'ک'], $s);
         $s = str_replace(["\xC2\xA0", "\xE2\x80\x8C", "\xE2\x80\x8F", "\xE2\x80\x8E"], ' ', $s);
+        $s = str_replace(['-', '_', "\xE2\x80\x93", "\xE2\x80\x94"], ' ', $s);
         $s = preg_replace('/\s+/u', ' ', $s) ?? $s;
         $s = rtrim($s, "_ \t\n\r\0\x0B");
         return mb_strtolower(trim($s));
@@ -330,7 +452,6 @@ final class TagFilteredTable
 
     private function debug_dump(): void
     {
-        // (Keep existing debug dump if needed, but not strictly required now that it works)
         header('Content-Type: application/json; charset=utf-8');
         echo wp_json_encode(['status' => 'ok'], JSON_UNESCAPED_UNICODE);
     }

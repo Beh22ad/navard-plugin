@@ -1,102 +1,103 @@
 /* =========================================================
    Navard — Tax Toggle Shortcode
+   Works standalone; binds to theme palette when available.
    ========================================================= */
 
 :root {
-    --navard-red: #c62828;
-    --navard-gray: #b0bec5;
+	--navard-red:  var(--navard-primary, #c62828);
+	--navard-gray: var(--navard-muted,   #b0bec5);
 }
 
 .navard-tax-widget {
-    width: 100%;
-    box-sizing: border-box;
-    margin-bottom: 20px;
-    font-family: inherit;
-    direction: rtl;
+	width: 100%;
+	box-sizing: border-box;
+	margin-bottom: 20px;
+	font-family: inherit;
+	direction: rtl;
 }
 
 .navard-tax-switch {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 14px 18px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    box-sizing: border-box;
-    transition: border-color 0.3s ease;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 14px 18px;
+	background: var(--navard-surface, #ffffff);
+	border: 1px solid var(--navard-border, #e2e8f0);
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+	transition: border-color 0.3s ease;
 }
 
 .navard-tax-switch:hover {
-    border-color: #cbd5e1;
+	border-color: var(--navard-muted, #cbd5e1);
 }
 
 .navard-tax-label {
-    font-weight: 700;
-    color: var(--navard-red);
-    font-size: 1rem;
-    cursor: pointer;
-    user-select: none;
+	font-weight: 700;
+	color: var(--navard-red);
+	font-size: 1rem;
+	cursor: pointer;
+	user-select: none;
 }
 
 /* ---------- Toggle track = the checkbox itself ---------- */
 .navard-tax-switch input[type="checkbox"].navard-tax-checkbox {
-    font-size: 15px;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    width: 2.9em;
-    height: 1.5em;
-    margin: 0;
-    padding: 0;
-    background: var(--navard-gray);
-    border: 0;
-    border-radius: 3em;
-    position: relative;
-    flex-shrink: 0;
-    cursor: pointer;
-    outline: none;
-    box-shadow: none;
-    -webkit-tap-highlight-color: transparent;
-    transition: all 0.2s ease-in-out;
+	font-size: 15px;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 2.9em;
+	height: 1.5em;
+	margin: 0;
+	padding: 0;
+	background: var(--navard-gray);
+	border: 0;
+	border-radius: 3em;
+	position: relative;
+	flex-shrink: 0;
+	cursor: pointer;
+	outline: none;
+	box-shadow: none;
+	-webkit-tap-highlight-color: transparent;
+	transition: all 0.2s ease-in-out;
 }
 
-/* ---------- ON: red ---------- */
+/* ---------- ON: brand color ---------- */
 .navard-tax-switch input[type="checkbox"].navard-tax-checkbox:checked {
-    background: var(--navard-red);
+	background: var(--navard-red);
 }
 
 /* ---------- Knob (OFF = right side) ---------- */
 .navard-tax-switch input[type="checkbox"].navard-tax-checkbox::after {
-    position: absolute;
-    content: "";
-    top: 0;
-    right: 0;
-    left: auto;
-    width: 1.5em;
-    height: 1.5em;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 0.25em rgba(0, 0, 0, 0.3);
-    transform: scale(0.7);
-    transition: all 0.2s ease-in-out;
+	position: absolute;
+	content: "";
+	top: 0;
+	right: 0;
+	left: auto;
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 50%;
+	background: var(--navard-surface, #fff);
+	box-shadow: 0 0 0.25em rgba(0, 0, 0, 0.3);
+	transform: scale(0.7);
+	transition: all 0.2s ease-in-out;
 }
 
 /* ---------- Knob (ON = left side) ---------- */
 .navard-tax-switch input[type="checkbox"].navard-tax-checkbox:checked::after {
-    right: calc(100% - 1.5em);
+	right: calc(100% - 1.5em);
 }
 
 /* Remove any theme checkmark */
 .navard-tax-switch input[type="checkbox"].navard-tax-checkbox::before {
-    content: none;
-    display: none;
+	content: none;
+	display: none;
 }
 
 /* Keyboard focus */
 .navard-tax-switch input[type="checkbox"].navard-tax-checkbox:focus-visible {
-    outline: 3px solid rgba(198, 40, 40, 0.3);
-    outline-offset: 3px;
+	outline: 3px solid var(--navard-primary-ring, rgba(198, 40, 40, 0.3));
+	outline-offset: 3px;
 }

@@ -963,7 +963,35 @@ final class FilteredTable
         if ($is_block_theme || ! $has_header) {
             global $_wp_current_template_content, $_wp_current_template_id;
 
-            $_wp_current_template_id = get_stylesheet() . '//navard-filtered';
+            /*
+         * Navard theme: use the theme's own templates/taxonomy-product_cat.html
+         * (or its Site Editor copy). [navard] inside it renders the table.
+         */
+            if ($is_block_theme && \Navard\Support\Helpers::is_navard_theme()) {
+                $template_id = get_stylesheet() . '//taxonomy-product_cat';
+
+                // Site Editor copy or file, whichever WordPress resolves.
+                $tpl = get_block_template($template_id, 'wp_template');
+
+                // Fall back to reading the theme file directly.
+                if (! $tpl || '' === trim((string) $tpl->content)) {
+                    $tpl = get_block_file_template($template_id, 'wp_template');
+                }
+
+                if ($tpl && '' !== trim((string) $tpl->content)) {
+                    $_wp_current_template_id      = $tpl->id;
+                    $_wp_current_template_content = $tpl->content;
+
+                    require $canvas;
+                    return;
+                }
+                // Template not found: fall through to the default below.
+            }
+
+            /*
+         * Default (any other theme): original hardcoded template.
+         */
+            $_wp_current_template_id = get_stylesheet() . '//taxonomy-product_cat';
 
             $_wp_current_template_content =
                 '<!-- wp:template-part {"slug":"header","tagName":"header"} /-->'
@@ -978,6 +1006,7 @@ final class FilteredTable
             return;
         }
 
+        // Classic theme.
         get_header();
         do_action('woocommerce_before_main_content');
         echo $html; // phpcs:ignore WordPress.Security.EscapeOutput
